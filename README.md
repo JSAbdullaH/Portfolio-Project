@@ -10,6 +10,12 @@ For this project, our primary goal is to build a **scalable business-driven soft
 
 To reach this milestone and ensure a solid foundation, we initiated our journey with the following foundational steps:
 
+## Table of Contents
+- [0. Team Formation](#0-team-formation)
+- [1. Research and Brainstorming](#1-research-and-brainstorming)
+- [2. Idea Evaluation](#2-idea-evaluation)
+- [3. Decision and Refinement](#3-decision-and-refinement)
+
 ---
 
 ## 0. Team Formation
