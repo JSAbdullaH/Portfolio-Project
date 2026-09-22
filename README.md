@@ -116,4 +116,4 @@ By narrowing our scope, the MVP will solely focus on the absolute necessary feat
 * **Faisal Alshahrani** | *Database Architecture & QA* <br>
   [GitHub](https://github.com/call-me-prof) 
 * **Saad Alatar** | *Backend & Cybersecurity* <br>
-  [GitHub](https://github.com/SaadTAr) ·
+  [GitHub](https://github.com/SaadTAr) 
