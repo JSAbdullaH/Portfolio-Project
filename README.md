@@ -15,6 +15,7 @@ To reach this milestone and ensure a solid foundation, we initiated our journey 
 - [1. Research and Brainstorming](#1-research-and-brainstorming)
 - [2. Idea Evaluation](#2-idea-evaluation)
 - [3. Decision and Refinement](#3-decision-and-refinement)
+- [4. Authors](#4-Authors)
 
 ---
 
@@ -107,13 +108,13 @@ By narrowing our scope, the MVP will solely focus on the absolute necessary feat
 
 ---
 
-## Authors
+## 4. Authors
 
-* **Laila Alghamdi** | *Product, UX/UI & Frontend* <br>
+* **Laila Alghamdi** | <br>
   [GitHub](https://github.com/laila-khalid)
-* **Abdullah Alzara** | *System Design & DevOps* <br>
+* **Abdullah Alzara** | <br>
   [GitHub](https://github.com/JSAbdullaH)
-* **Faisal Alshahrani** | *Database Architecture & QA* <br>
+* **Faisal Alshahrani** | <br>
   [GitHub](https://github.com/call-me-prof) 
-* **Saad Alatar** | *Backend & Cybersecurity* <br>
+* **Saad Alatar** |  <br>
   [GitHub](https://github.com/SaadTAr) 
