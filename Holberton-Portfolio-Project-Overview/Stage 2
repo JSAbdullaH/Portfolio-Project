@@ -1,0 +1,70 @@
+# Portfolio Project - Project Charter Development (Stage 2)
+
+## Introduction
+
+For this Stage We establish a Project Charter that serves as the foundational document for our centralized IoT tracking and safety platform designed for site workers. 
+
+The purpose of this document is to establish a shared understanding among all team members and stakeholders regarding the project's core objectives, scope boundaries, and execution strategy. It acts as the primary reference point to guide decision-making, manage risks, and ensure complete alignment throughout the 6-weeks MVP development lifecycle.
+
+## Table of Contents
+- [0. Define Project Objectives](#0-Define-Project-Objectives)
+- [1. Identify Stakeholders and Team Roles](#1-Identify-Stakeholders-and-Team-Roles)
+- [2. Define Scope](#2-Define-Scope)
+- [3. Identify Risks](#3-Identify-Risks)
+- [4. Develop a High-Level Plan](#4-Develop-a-High-Level-Plan)
+- [5. Authors](#6-Authors)
+
+---
+
+## 0. Define Project Objectives
+
+Our platform provides a smart tracking and safety solution designed for organizations to meticulously monitor the health, safety, and exact locations of their on-site workforce. By streamlining administrative operations and delivering actionable data analytics based on logged activities, the system enhances managerial decision-making and drastically reduces wasted operational costs, time, and effort.
+
+To achieve this, we are developing a comprehensive system that logs employee site movements, clarifies their tasks, and records daily operations through seamless integration with health-sensor-equipped smartwatches provided to the workers. Organizations can oversee all these activities via a customized, centralized dashboard. This interface empowers site managers to manage employee profiles, monitor live updates, and receive instant automated alerts if a worker's vital signs reach critical thresholds or if they breach designated geofenced boundaries on a site-specific interactive map.
+
+---
+
+### Project Objectives
+
+**Project Purpose:**
+To equip organizations with a centralized, proactive tracking platform that integrates wearable IoT data with a live administrative dashboard, ensuring workforce safety while optimizing operational efficiency and reducing wasted resources.
+
+**Key MVP Objectives (SMART):**
+*   **Objective 1 (Real-Time Tracking & Profiles):** Develop a customized administrative dashboard featuring live map integration and employee profile management, allowing managers to track site movements and task updates continuously by the end of Week 4.
+*   **Objective 2 (Automated Safety & Geofence Alerts):** Implement an automated alert system integrated with (simulated) smartwatch sensor data to trigger instant warning messages when a worker's vital signs are negatively affected or when they exit a designated geofenced zone, fully functional by Week 5.
+*   **Objective 3 (Data Analytics & Operational Efficiency):** Build a robust data-logging architecture that records daily site operations and movements, generating high-level administrative insights designed to prove a reduction in operational waste by the final presentation in Week 6.
+---
+
+
+## 1. Identify Stakeholders and Team Roles
+
+---
+
+
+## 2. Define Scope
+
+---
+
+## 3. Identify Risks
+
+
+---
+
+## 4. Develop a High-Level Plan
+
+
+
+---
+
+
+
+## 5. Authors
+
+* **Laila Alghamdi** | <br>
+  [GitHub](https://github.com/laila-khalid)
+* **Abdullah Alzara** | <br>
+  [GitHub](https://github.com/JSAbdullaH)
+* **Faisal Alshahrani** | <br>
+  [GitHub](https://github.com/call-me-prof) 
+* **Saad Alatar** |  <br>
+  [GitHub](https://github.com/SaadTAr) 
