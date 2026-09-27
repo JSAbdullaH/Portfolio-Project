@@ -20,19 +20,20 @@ The purpose of this document is to establish a shared understanding among all te
 
 Our platform provides a smart tracking and safety solution designed for organizations to meticulously monitor the health, safety, and exact locations of their on-site workforce. By streamlining administrative operations and delivering actionable data analytics based on logged activities, the system enhances managerial decision-making and drastically reduces wasted operational costs, time, and effort.
 
-To achieve this, we are developing a comprehensive system that logs employee site movements, clarifies their tasks, and records daily operations through seamless integration with health-sensor-equipped smartwatches provided to the workers. Organizations can oversee all these activities via a customized, centralized dashboard. This interface empowers site managers to manage employee profiles, monitor live updates, and receive instant automated alerts if a worker's vital signs reach critical thresholds or if they breach designated geofenced boundaries on a site-specific interactive map.
+To achieve this, we are developing a comprehensive system that logs employee site movements, clarifies their tasks, and records daily operations through seamless integration with health-sensor-equipped IOT provided to the workers. Organizations can oversee all these activities via a customized, centralized dashboard. This interface empowers site managers to manage employee profiles, monitor live updates, Managers can assign workloads and tasks and review the work log for each employee and receive instant automated alerts if a worker's vital signs reach critical thresholds or if they breach designated geofenced boundaries on a site-specific interactive map.
 
 ---
 
 ### Project Objectives
 
 **Project Purpose:**
-To equip organizations with a centralized, proactive tracking platform that integrates wearable IoT data with a live administrative dashboard, ensuring workforce safety while optimizing operational efficiency and reducing wasted resources.
+To equip organizations with a centralized, proactive tracking platform that integrates wearable IoT data with a live administrative dashboard, ensuring workforce safety while optimizing operational efficiency and reducing wasted resources. 
 
-**Key MVP Objectives (SMART):**
-*   **Objective 1 (Real-Time Tracking & Profiles):** Develop a customized administrative dashboard featuring live map integration and employee profile management, allowing managers to track site movements and task updates continuously by the end of Week 4.
-*   **Objective 2 (Automated Safety & Geofence Alerts):** Implement an automated alert system integrated with (simulated) smartwatch sensor data to trigger instant warning messages when a worker's vital signs are negatively affected or when they exit a designated geofenced zone, fully functional by Week 5.
-*   **Objective 3 (Data Analytics & Operational Efficiency):** Build a robust data-logging architecture that records daily site operations and movements, generating high-level administrative insights designed to prove a reduction in operational waste by the final presentation in Week 6.
+**Objectives:**
+*   **Objective 1 Real-Time Tracking & Profiles:** Develop a customized administrative dashboard featuring live map integration and employee profile management, allowing managers to track site movements and task updates continuously by the end of Week 8.
+*   **Objective 2 Automated Safety & Geofence Alerts:** Implement an automated alert system integrated with an IOT data to trigger instant warning messages when a worker's vital signs are negatively affected or when they exit a designated geofenced zone, fully functional by Week 9.
+*   **Objective 3 Data Analytics & Operational Efficiency:** Build a robust data-logging architecture that records daily site operations and movements, generating high-level administrative insights designed to prove a reduction in operational waste by the final presentation in Week 12.
+
 ---
 
 
@@ -42,13 +43,11 @@ To equip organizations with a centralized, proactive tracking platform that inte
 Stakeholders represent all individuals or groups who have an interest in the project, whether they are directly involved in building it or will be affected by its deployment.
 
 **Internal Stakeholders:**
-*   **Development Team:** The core engineers building the MVP (Laila, Saad, Faisal, Abdullah).
-*   **Holberton Instructors & Mentors:** Advisors providing technical guidance, code reviews, and final evaluation.
-
+*   **Development Team:** The Business Developers and engineers building the MVP "Laila, Saad, Faisal, Abdullah".
 **External Stakeholders:**
-*   **Site Managers & Command Center Operators:** The primary users of the dashboard who rely on the platform to monitor workforce safety and make operational decisions.
-*   **Frontline Workforce / Volunteers:** The end-users wearing the tracking devices (e.g., construction workers, event organizers) whose safety and location are being monitored.
-*   **Partner Organizations (Potential):** Mega-project contractors or crowd management authorities seeking to adopt the MVP.
+*   **Site Managers & Operators:** The primary users of the dashboard who rely on the platform to monitor workforce safety and make operational decisions.
+*   **Frontline Workforce / Volunteers:** The end-users wearing the tracking devices.
+*   **Partner Organizations "Potential":** Mega-project contractors or crowd management authorities seeking to adopt the MVP.
 
 ---
 
@@ -57,10 +56,10 @@ To ensure accountability and smooth execution during the 6-week MVP timeline, te
 
 | Team Member | Project Role | Core Responsibilities |
 | :--- | :--- | :--- |
-| **Laila** | Project Manager & Frontend Developer | Oversees project timeline and documentation. Designs UI/UX, develops the interactive administrative dashboard, integrates the live map, and implements real-time UI alerts. |
-| **Saad** | Backend Developer & API Engineer | Builds the RESTful API, develops the backend logic engine to process incoming IoT/simulated data, and sets up safety threshold rules (e.g., heat stress rules). |
-| **Faisal** | Database Administrator (DBA) | Designs the database schema, manages data logging for employee profiles, coordinates historical data storage, and ensures efficient querying. |
-| **Abdullah** | System Architect & DevOps / IoT | Maps the overall system architecture, manages cloud deployment, builds the data simulation scripts (or hardware integration), and handles network routing. |
+| **Laila** | PM, Frontend lead & Fullstack Developer | Oversees project timeline and documentation. Designs UI/UX, develops the interactive administrative dashboard, integrates the live map, and implements real-time UI alerts while also providing technical support in the Software engineering. |
+| **Saad** | Backend lead & Fullstack Developer| Builds the RESTful API, develops the backend logic engine to process incoming IoT/simulated data, and sets up safety threshold rules while also providing technical support in the Software engineering . |
+| **Faisal** | Database Administrator & Fullstack Developer  | Designs the database schema, manages data logging for employee profiles, coordinates historical data storage, and ensures efficient querying while also providing technical support in the Software engineering. |
+| **Abdullah** | System Architect, DevOps & Fullstack Developer  | Maps the overall system architecture, manages cloud deployment, builds the data simulation scripts and hardware integration, and handles network routing while also providing technical support in the Software engineering. |
 ---
 
 
@@ -69,17 +68,17 @@ To ensure accountability and smooth execution during the 6-week MVP timeline, te
 **Scope Statement:** 
 The scope of this MVP is focused on developing the core software infrastructure—a fully functional web dashboard, a robust backend RESTful API, and a centralized database—capable of receiving, processing, and displaying structured tracking and health data to ensure workforce safety.
 
-**In-Scope (What we will deliver):**
+**In-Scope:**
 *   **Web-Based Dashboard:** Development of an interactive frontend administrative interface for site managers.
 *   **Live Map Integration:** Real-time plotting of worker GPS coordinates on a site-specific map.
-*   **Backend & API:** A functional RESTful API logic that receives, parses, and routes incoming telemetry data.
+*   **Backend & API:** A functional RESTful API logic that receives, process, and routes incoming telemetry data.
 *   **Database Management:** Storing and retrieving employee profiles, historical movement logs, and alert records securely.
-*   **Automated Alert Logic:** A logic engine that triggers UI notifications based on predefined safety thresholds (e.g., vital signs anomalies, geofence breaches).
-*   **Data Ingestion:** Integration with a data source (either simulated scripts or basic commercial IoT hardware) to feed structured GPS and health metrics into the system.
+*   **Automated Alert Logic:** A logic engine that triggers UI notifications based on predefined safety thresholds.
+*   **Data Integration:** Integration with a data source to feed structured GPS and health metrics into the system.
 
-**Out-of-Scope (What is explicitly excluded for this MVP):**
-*   **Custom Hardware Manufacturing:** Designing or manufacturing physical smartwatches or sensors from scratch.
-*   **Native Mobile Applications:** Developing standalone iOS or Android mobile apps for managers or workers (focus is entirely on the responsive web dashboard).
+**Out-of-Scope:**
+*   **Assets tracking & customizing other tracking solutions:**....
+*   **Native Mobile Applications:** Developing standalone iOS or Android mobile apps for managers or workers.
 *   **Enterprise System Integrations:** Integration with external third-party software such as HR, payroll, or ERP systems.
 *   **Advanced AI Analytics:** Implementing machine learning or complex predictive AI models for worker behavior.
 *   **Offline Mesh Networking:** Building complex local networks (like LoRaWAN) for areas with zero internet coverage (the MVP assumes data reaches the server via standard internet protocols).
@@ -92,11 +91,11 @@ Anticipating potential challenges is critical for maintaining the 6-week MVP tim
 
 | Risk Category | Potential Risk | Mitigation Strategy |
 | :--- | :--- | :--- |
-| **Technology (Integration)** | **Frontend-Backend Bottleneck:** Frontend development (Dashboard) stalls while waiting for the Backend API to be fully functional. | **Mitigation:** Define a strict API contract (JSON schema) in Week 1. Use Mock APIs (e.g., Postman) so the Frontend can be built and tested independently of the Backend progress. |
-| **Technology (Performance)** | **Live Map Overload:** Continuous real-time data streaming causes the web dashboard or map to freeze/crash during the demo. | **Mitigation:** Implement data throttling (e.g., fetching updates every 5-10 seconds instead of every second) and optimize UI re-rendering logic. |
-| **Technology (Hardware)** | **Hardware/Network Failure:** The physical IoT smartwatch fails to connect or the internet drops during the final live presentation. | **Mitigation:** Develop a fully tested Python simulation script as a permanent backup. If hardware fails, the script will instantly inject simulated data into the API to keep the demo running seamlessly. |
-| **Timeline & Scope** | **Scope Creep:** The team attempts to add unplanned features (e.g., complex analytics), jeopardizing the 6-week MVP deadline. | **Mitigation:** Strictly adhere to the "In-Scope" items defined in this charter. Any new feature requests must be documented in a backlog for post-MVP phases. |
-| **Team Dynamics** | **Knowledge Silos:** Only one person understands a critical component (e.g., only the DBA knows how the database is structured). | **Mitigation:** Conduct bi-weekly short sync meetings (Stand-ups) and maintain clear, shared documentation for all system architectures and API endpoints. |
+| **Integration** | **Frontend-Backend Bottleneck:** Frontend development (Dashboard) stalls while waiting for the Backend API to be fully functional. | **Mitigation:** Define a strict API contract (JSON schema) in Week 1. Use Mock APIs (e.g., Postman) so the Frontend can be built and tested independently of the Backend progress. |
+| **Performance** | **Live Map Overload:** Continuous real-time data streaming causes the web dashboard or map to freeze/crash during the demo. | **Mitigation:** Implement data throttling (e.g., fetching updates every 5-10 seconds instead of every second) and optimize UI re-rendering logic. |
+| **Hardware** | **Hardware/Network Failure:** The physical IoT fails to connect or the internet drops during the final live presentation. | **Mitigation:** Develop a fully tested Python simulation script as a permanent backup. If hardware fails, the script will instantly inject simulated data into the API to keep the demo running seamlessly. |
+| **Timeline & Scope** | **Scope Creep:** we attempts to add unplanned features like complex analytics, jeopardizing the 6-week MVP deadline. | **Mitigation:** Strictly adhere to the "In-Scope" items defined in this charter. Any new feature requests must be documented in a backlog for post-MVP phases. |
+| **Team Dynamics** | **Knowledge Silos:** Only one person understands a critical component. | **Mitigation:** Conduct weekly sync meetings and daily Stand-ups to maintain clear, shared understanding for all system architectures and API endpoints. |
 
 ---
 
