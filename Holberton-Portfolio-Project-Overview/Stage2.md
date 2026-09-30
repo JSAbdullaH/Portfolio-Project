@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Stage 2 of the Holberton Portfolio Project is about turning an idea into a structured plan before any code is written. In this stage we produce a *Project Charter*: a short, formal document that defines why the project exists, what it will and will not deliver, who is involved, what could go wrong, and how the work will be organized over time.
+Stage 2 of the Portfolio Project is about turning an idea into a structured plan before any code is written. In this stage we produce a **Project Charter**: a short, formal document that defines why the project exists, what it will and will not deliver, who is involved, what could go wrong, and how the work will be organized over time.
 
 The value of this stage is that it forces clarity early. It gives every team member and stakeholder the same understanding of the project's purpose, scope, and priorities, and it becomes the reference point we return to whenever a decision, a trade-off, or a change request comes up during development. It also trains us in the basics of project management: formalizing information, setting measurable objectives, and identifying risks and roles before they become problems.
 
