@@ -6,7 +6,7 @@ For this project, our primary goal is to build a **scalable business-driven soft
 
 1. **Corporate Readiness:** To prepare ourselves for the professional corporate work environment and its collaborative dynamics.
 2. **Structured Methodology:** To adopt a highly organized and practical development approach that will serve as a foundation for the success of any future projects our team undertakes.
-3. **Practical Delivery:** To successfully extract and develop one core, fully functional feature from our system to present as our MVP by the end of the Holberton Academy final project timeline.
+3. **Practical Delivery:** To successfully extract and develop one core, fully functional feature from our system to present as our MVP by the end of the Holberton School final project timeline.
 
 To reach this milestone and ensure a solid foundation, we initiated our journey with the following foundational steps:
 
@@ -70,7 +70,7 @@ Our brainstorming phase began with a series of team meetings focused on identify
 
 ## 2. Idea Evaluation
 ### Evaluation Criteria
-We  evaluated 6  concepts pitched by the team against core metrics established by us : **Market Need**, **Technical Feasibility**, **Future scaleability** and **Business Model Scalability**.
+We  evaluated 7 concepts pitched by the team against core metrics established by us : **Market Need**, **Technical Feasibility**, **Future scaleability** and **Business Model Scalability**.
 
 ### Concepts Evaluated
 
