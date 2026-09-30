@@ -189,6 +189,241 @@ The resulting user stories form our Product Backlog, which is managed in Jira. D
 
 ## 3. Create High-Level Sequence Diagrams
 
+# System Architecture
+
+This document describes the high-level architecture of the system, including the field devices, mobile application, internet communication, backend services, database, and web dashboard.
+
+## High-Level Architecture
+
+```mermaid
+flowchart LR
+
+    subgraph FIELD["Field / Site"]
+        WORKER["Site Worker"]
+        DEVICE["Hardware Device"]
+        MOBILE["Mobile Application"]
+        SENSOR["Sensors"]
+
+        WORKER -->|"Location Data"| DEVICE
+        DEVICE -->|"4G / GPS / Health Data"| MOBILE
+        MOBILE -->|"Sensor Data"| SENSOR
+    end
+
+    INTERNET(("Internet"))
+
+    subgraph BACKEND["Backend / Application Layer"]
+        API["API Gateway"]
+        AUTH["Authentication"]
+        BL["Business Logic"]
+        DB["Database Layer"]
+
+        API --> AUTH
+        API --> BL
+        BL --> DB
+    end
+
+    subgraph SERVICES["Backend Services"]
+        LOC["Location Services"]
+        ZONE["Zones & Alerts"]
+        ORG["Organizations / Locations"]
+        LOG["Logs"]
+    end
+
+    subgraph CLIENT["Web Platform"]
+        WEB["Website / Dashboard"]
+    end
+
+    DEVICE -->|"Location"| INTERNET
+    SENSOR -->|"Sensor Data"| INTERNET
+
+    INTERNET --> API
+
+    BL --> LOC
+    BL --> ZONE
+    BL --> ORG
+    BL --> LOG
+
+    API -->|"REST API"| WEB
+    WEB -->|"Requests"| API
+```
+
+## Architecture Components
+
+### 1. Field / Site
+
+The field layer represents the physical environment where the site worker operates.
+
+- **Site Worker** — Person being monitored by the system.
+- **Hardware Device** — Device responsible for collecting and transmitting location data.
+- **Mobile Application** — Provides communication and additional sensor data.
+- **Sensors** — Collect data such as health or environmental information.
+
+### 2. Internet
+
+The collected data is transmitted through the Internet to the backend infrastructure.
+
+The system may use:
+
+- GPS
+- 4G / Cellular connectivity
+- Mobile sensors
+- Health monitoring data
+
+### 3. Backend / Application Layer
+
+The backend is responsible for receiving, processing, validating, and storing the incoming data.
+
+#### API Gateway
+
+The API Gateway acts as the main entry point for communication between clients and the backend.
+
+Responsibilities include:
+
+- Receiving API requests
+- Routing requests
+- Validating requests
+- Returning responses
+- Communicating with backend services
+
+#### Authentication
+
+Handles user authentication and authorization.
+
+Examples:
+
+- User login
+- Access tokens
+- Role-based access
+- API authentication
+
+#### Business Logic
+
+Contains the core application logic.
+
+It processes:
+
+- Worker locations
+- Zones
+- Alerts
+- Organizations
+- Site information
+- Monitoring rules
+
+#### Database Layer
+
+Responsible for persistent storage of system data.
+
+Possible data includes:
+
+- Users
+- Workers
+- Locations
+- Organizations
+- Zones
+- Alerts
+- Sensor data
+- Logs
+
+### 4. Backend Services
+
+The backend provides several specialized services.
+
+#### Location Services
+
+Responsible for processing and managing worker location data.
+
+#### Zones & Alerts
+
+Responsible for:
+
+- Defining geographic zones
+- Detecting zone entry/exit
+- Generating alerts
+- Monitoring worker movement
+
+#### Organizations / Locations
+
+Manages organizations, sites, and their associated geographical areas.
+
+#### Logs
+
+Stores system activities and historical events for monitoring and auditing.
+
+### 5. Web Platform
+
+The website provides a dashboard for administrators and authorized users.
+
+The dashboard can be used to:
+
+- Monitor workers
+- View live locations
+- View zones
+- Receive alerts
+- Review logs
+- Manage organizations
+- View historical data
+
+The Web Platform communicates with the backend through the API Gateway.
+
+## Data Flow
+
+The general data flow is:
+
+```text
+Site Worker
+     │
+     ▼
+Hardware / Mobile Device
+     │
+     ├── GPS Data
+     ├── Health Data
+     └── Sensor Data
+     │
+     ▼
+   Internet
+     │
+     ▼
+ API Gateway
+     │
+     ▼
+Business Logic
+     │
+     ├── Location Services
+     ├── Zones & Alerts
+     ├── Organizations
+     └── Logs
+     │
+     ▼
+ Database
+     │
+     ▼
+Web Dashboard
+```
+
+## Communication
+
+The system is designed around API-based communication:
+
+```text
+Hardware / Mobile
+       │
+       ▼
+    Internet
+       │
+       ▼
+  Backend API
+       │
+       ▼
+Business Logic
+       │
+       ▼
+   Database
+       │
+       ▼
+Web Dashboard
+```
+
+This architecture separates the **field devices**, **application logic**, **data storage**, and **user interface**, making the system easier to maintain, scale, and extend.
 ---
 
 ## 4. Document External and Internal APIs
