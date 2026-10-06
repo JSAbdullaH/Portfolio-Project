@@ -180,15 +180,6 @@ The resulting user stories form our Product Backlog, which is managed in Jira. D
 ---
 
 ## 1. Design System Architecture
-
----
-
-## 2. Define Components, Classes, and Database Design
-
----
-
-## 3. Create High-Level Sequence Diagrams
-
 # System Architecture
 
 This document describes the high-level architecture of the system, including the field devices, mobile application, internet communication, backend services, database, and web dashboard.
@@ -424,6 +415,15 @@ Web Dashboard
 ```
 
 This architecture separates the **field devices**, **application logic**, **data storage**, and **user interface**, making the system easier to maintain, scale, and extend.
+---
+
+## 2. Define Components, Classes, and Database Design
+
+---
+
+## 3. Create High-Level Sequence Diagrams
+
+
 ---
 
 ## 4. Document External and Internal APIs
