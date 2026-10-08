@@ -749,7 +749,7 @@ All paths are relative to the base URL `/api/v1`.
 | 32 | POST | `/reports` | Generate a PDF report with a reference number | Admin, Manager | US-31, US-32, Stage 2 – Reports |
 | 33 | GET | `/reports/:id/download` | Download a generated PDF report | Admin, Manager | US-32 |
 
-> **Note:** Companies are created only through `POST /auth/register` (US-01), so there are no `/companies` endpoints. Work sessions and alerts are generated automatically by the backend while processing telemetry, so they have no create endpoints.---
+> **Note:** Companies are created only through `POST /auth/register` (US-01), so there are no `/companies` endpoints. Work sessions and alerts are generated automatically by the backend while processing telemetry, so they have no create endpoints.
 ---
 
 ## 5. Plan SCM and QA Strategies
