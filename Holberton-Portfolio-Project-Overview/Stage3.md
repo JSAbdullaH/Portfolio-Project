@@ -195,7 +195,7 @@ flowchart LR
         SENSOR["Sensors"]
 
         WORKER -->|"Location Data"| DEVICE
-        DEVICE -->|"4G / GPS / Health Data"| MOBILE
+        SENSOR -->|"Sensor Data"| DEVICE
     end
 
     INTERNET(("Internet"))
@@ -222,8 +222,7 @@ flowchart LR
         WEB["Website / Dashboard"]
     end
 
-    DEVICE -->|"Location"| INTERNET
-    SENSOR -->|"Sensor Data"| INTERNET
+    DEVICE -->|"4G / GPS / Location Data"| INTERNET
 
     INTERNET --> API
 
@@ -235,7 +234,6 @@ flowchart LR
     API -->|"REST API"| WEB
     WEB -->|"Requests"| API
 ```
-
 ## Architecture Components
 
 ### 1. Field / Site
