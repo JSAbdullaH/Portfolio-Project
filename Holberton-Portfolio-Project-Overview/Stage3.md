@@ -419,6 +419,420 @@ This architecture separates the **field devices**, **application logic**, **data
 
 ## 2. Define Components, Classes, and Database Design
 
+The purpose of this task is to detail the internal structure of the system: the classes of the back-end, the design of the database and the components of the front-end.
+
+### 2.1 Back-End Classes
+
+The back-end is a Node.js / Express API organized in layers. A request passes through the middleware to a controller, which calls a service, which calls repositories. Only repositories talk to the database.
+
+| Layer | Responsibility | Classes |
+|---|---|---|
+| **Controllers** | HTTP only: read the request, call one service method, return the response. | `AuthController`, `CompanyController`, `UserController`, `SiteController`, `EmployeeController`, `DeviceController`, `GeofenceController`, `TelemetryController`, `AlertController`, `TaskController`, `RecordController` |
+| **Middleware** | Checks that run before a controller. | `AuthMiddleware`, `DeviceAuthMiddleware`, `ValidationMiddleware`, `ErrorHandler` |
+| **Services** | The business rules of one resource. | `AuthService`, `CompanyService`, `UserService`, `SiteService`, `EmployeeService`, `DeviceService`, `GeofenceService`, `TelemetryService`, `AlertService`, `TaskService`, `RecordService` |
+| **Tracking core** | Presence on a site, and the three alert rules. | `PresenceTracker`, `RuleEngine` |
+| **Real-time** | Pushes live updates to the dashboard over a WebSocket hosted by our own API. | `RealtimeGateway` |
+| **Scheduled jobs** | Closes the sessions of devices that went silent. | `SessionSweeper` |
+| **Repositories** | The only layer that runs SQL; one per table. | `CompanyRepository`, `UserRepository`, `TokenRepository`, `SiteRepository`, `EmployeeRepository`, `DeviceRepository`, `GeofenceRepository`, `WorkSessionRepository`, `TelemetryRepository`, `AlertRepository`, `EmployeeStateRepository`, `TaskRepository` |
+| **Domain models** | The data of one table row, plus its small rules. | `Company`, `User`, `Site`, `Employee`, `Device`, `Geofence`, `WorkSession`, `TelemetryReading`, `Alert`, `EmployeeState`, `Task`, `DailyWorkRecord` |
+| **Infrastructure** | The database connection and transactions. | `Database` |
+
+`DeviceSimulator` is a separate program that plays a wearable: it sends readings to the same endpoint a real device would use.
+
+#### Domain Models: Attributes and Methods
+
+```mermaid
+classDiagram
+    direction LR
+
+    class Company {
+        +UUID id
+        +String name
+        +Number dailyLimitMinutes
+        +Date middayBanFromDate
+        +Date middayBanToDate
+        +Time middayBanStartTime
+        +Time middayBanEndTime
+        +Number middayBanLeadMinutes
+        +isInMiddayBanWindow(at) Boolean
+    }
+    class User {
+        +UUID id
+        +UUID companyId
+        +String fullName
+        +String email
+        +String passwordHash
+        +UserRole role
+        +Boolean isActive
+        +isAdmin() Boolean
+    }
+    class Site {
+        +UUID id
+        +UUID companyId
+        +String name
+        +GeoJSON boundary
+        +Time shiftStart
+        +Time shiftEnd
+        +Boolean isActive
+        +contains(latitude, longitude) Boolean
+        +isDuringShift(at) Boolean
+    }
+    class Employee {
+        +UUID id
+        +UUID companyId
+        +UUID siteId
+        +String employeeNumber
+        +String fullName
+        +String jobTitle
+        +String phone
+        +EmployeeStatus status
+        +Date consentGivenAt
+        +UUID consentRecordedBy
+        +Date consentWithdrawnAt
+        +hasActiveConsent() Boolean
+        +deactivate() void
+    }
+    class Device {
+        +UUID id
+        +UUID companyId
+        +UUID employeeId
+        +String serialNumber
+        +String apiKeyHash
+        +Boolean isActive
+        +Date lastSeenAt
+        +isAssigned() Boolean
+        +isOffline(now) Boolean
+    }
+    class Geofence {
+        +UUID id
+        +UUID siteId
+        +String name
+        +GeoJSON boundary
+        +Boolean isOutdoor
+        +Boolean isActive
+        +contains(latitude, longitude) Boolean
+    }
+    class WorkSession {
+        +Number id
+        +UUID companyId
+        +UUID employeeId
+        +UUID siteId
+        +UUID deviceId
+        +Date startedAt
+        +Date endedAt
+        +SessionEndReason endReason
+        +Date createdAt
+        +isOpen() Boolean
+        +minutes(now) Number
+    }
+    class TelemetryReading {
+        +Number id
+        +Number sessionId
+        +Number latitude
+        +Number longitude
+        +Number batteryPercent
+        +Date recordedAt
+        +Date receivedAt
+    }
+    class Alert {
+        +UUID id
+        +Number sessionId
+        +AlertType alertType
+        +UUID geofenceId
+        +Number latitude
+        +Number longitude
+        +Number limitMinutes
+        +Number observedMinutes
+        +Date triggeredAt
+        +Date createdAt
+        +UUID acknowledgedBy
+        +Date acknowledgedAt
+        +Date resolvedAt
+        +status() AlertStatus
+    }
+    class EmployeeState {
+        +UUID employeeId
+        +Number sessionId
+        +UUID geofenceId
+        +Number latitude
+        +Number longitude
+        +Number batteryPercent
+        +Date recordedAt
+        +Date receivedAt
+        +isOnSite() Boolean
+        +isStale(now) Boolean
+    }
+    class Task {
+        +UUID id
+        +UUID companyId
+        +UUID siteId
+        +UUID geofenceId
+        +UUID employeeId
+        +UUID createdBy
+        +String title
+        +String description
+        +TaskStatus status
+        +Date scheduledFor
+        +Date completedAt
+        +changeStatus(status) void
+    }
+    class DailyWorkRecord {
+        <<view>>
+        +UUID companyId
+        +UUID employeeId
+        +UUID siteId
+        +Date workDate
+        +Date firstInAt
+        +Date lastOutAt
+        +Number sessionCount
+        +Number totalMinutes
+    }
+
+    Company "1" --> "*" User : has
+    Company "1" --> "*" Site : runs
+    Company "1" --> "*" Employee : employs
+    Company "1" --> "*" Device : owns
+    Site "1" --> "*" Geofence : contains
+    Site "0..1" --> "*" Employee : is assigned
+    Employee "1" --> "0..1" Device : wears
+    Employee "1" --> "0..1" EmployeeState : has
+    Employee "1" --> "*" WorkSession : works
+    Site "1" --> "*" WorkSession : hosts
+    WorkSession "1" --> "*" TelemetryReading : collects
+    WorkSession "1" --> "*" Alert : raises
+    User "1" --> "*" Task : creates
+    Site "1" --> "*" Task : has
+    Employee "1" --> "*" Task : is given
+    WorkSession ..> DailyWorkRecord : is summed into
+```
+
+#### Main Methods of the Services
+
+| Class | Key methods |
+|---|---|
+| `AuthService` | `registerCompany()` · `login()` · `refresh()` · `logout()` |
+| `CompanyService` | `getSettings()` · `updateSettings()` |
+| `UserService` | `createManager()` · `list()` · `deactivate()` |
+| `SiteService` | `create()` · `update()` · `deactivate()` · `list()` · `locate(point)` |
+| `EmployeeService` | `create()` · `list()` · `getProfile()` · `update()` · `deactivate()` · `assignToSite()` · `recordConsent()` · `withdrawConsent()` |
+| `DeviceService` | `register()` · `assign()` · `unassign()` · `list()` |
+| `GeofenceService` | `create()` · `update()` · `deactivate()` · `list()` · `locate(point)` |
+| `TelemetryService` | `ingest(device, reading)` |
+| `AlertService` | `raise()` · `resolve()` · `list()` · `acknowledge()` |
+| `TaskService` | `create()` · `updateStatus()` · `listForEmployee()` · `listForSite()` |
+| `RecordService` | `getDailyRecords()` · `getMovementHistory()` |
+| `PresenceTracker` | `enterSite()` · `leaveSite()` · `stopTracking()` |
+| `RuleEngine` | `evaluate()` · `checkBreach()` · `checkDailyHours()` · `checkMiddayBan()` |
+| `RealtimeGateway` | `joinSite()` · `broadcastState()` · `broadcastAlert()` |
+
+Every service method receives `companyId` from the authenticated user's token, never from the request, so a company can only reach its own data.
+
+### 2.2 Database Design
+
+The system uses a relational database, **PostgreSQL**. The schema has been written as an executable migration. It contains **12 tables and 1 view**.
+
+#### Tables
+
+| # | Table | Purpose |
+|---|---|---|
+| 1 | `companies` | The tenant: one row per client organization, with the settings of its alert rules |
+| 2 | `users` | Dashboard accounts: Company Admins and Site Managers |
+| 3 | `refresh_tokens` | Stored session tokens, so that logging out really revokes a session |
+| 4 | `sites` | The project sites of a company: perimeter and planned shift |
+| 5 | `employees` | The workers being tracked, their site and their consent |
+| 6 | `devices` | Wearables, real or simulated, and the employee each one is assigned to |
+| 7 | `geofences` | The work zones drawn inside a site, and whether each is outdoor |
+| 8 | `work_sessions` | The attendance record: each continuous presence of a worker on a site |
+| 9 | `telemetry_logs` | Every position that was stored; the movement history |
+| 10 | `alerts` | What the rule engine found, and how it was handled |
+| 11 | `employee_current_state` | The latest position of each employee; feeds the live map |
+| 12 | `tasks` | Work given to one employee, on a site, for a day |
+| – | `daily_work_records` (view) | Minutes per worker, site and day, summed from the sessions |
+
+#### Entity-Relationship Diagram
+
+```mermaid
+erDiagram
+    companies ||--o{ users : "has"
+    companies ||--o{ sites : "runs"
+    companies ||--o{ employees : "employs"
+    companies ||--o{ devices : "owns"
+    companies ||--o{ tasks : "plans"
+    users ||--o{ refresh_tokens : "holds"
+    users |o--o{ employees : "records consent of"
+    users |o--o{ alerts : "acknowledges"
+    users ||--o{ tasks : "creates"
+    sites |o--o{ employees : "is assigned"
+    sites ||--o{ geofences : "contains"
+    sites ||--o{ work_sessions : "hosts"
+    sites ||--o{ tasks : "has"
+    employees |o--o| devices : "wears"
+    employees ||--o{ work_sessions : "works"
+    employees ||--o| employee_current_state : "has"
+    employees ||--o{ tasks : "is given"
+    devices ||--o{ work_sessions : "records"
+    geofences |o--o{ alerts : "is named in"
+    geofences |o--o{ employee_current_state : "is the zone of"
+    geofences |o--o{ tasks : "locates"
+    work_sessions ||--o{ telemetry_logs : "collects"
+    work_sessions ||--o{ alerts : "raises"
+    work_sessions |o--o{ employee_current_state : "is open in"
+
+    companies {
+        uuid id PK
+        varchar(150) name
+        smallint daily_limit_minutes "default 600 = 10 h"
+        date midday_ban_from_date "nullable; season start"
+        date midday_ban_to_date "nullable; season end"
+        time midday_ban_start_time "default 12:00"
+        time midday_ban_end_time "default 15:00"
+        smallint midday_ban_lead_minutes "alert this early"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    users {
+        uuid id PK
+        uuid company_id FK
+        varchar(120) full_name
+        varchar(255) email "unique, case-insensitive"
+        varchar(255) password_hash "bcrypt or argon2"
+        user_role role
+        boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    refresh_tokens {
+        uuid id PK
+        uuid user_id FK
+        varchar(255) token_hash UK "SHA-256 digest"
+        timestamptz expires_at
+        timestamptz revoked_at "nullable, set on logout"
+        timestamptz created_at
+    }
+    sites {
+        uuid id PK
+        uuid company_id FK
+        varchar(120) name "unique per company"
+        jsonb boundary "GeoJSON Polygon, the perimeter"
+        time shift_start "Saudi time"
+        time shift_end "Saudi time"
+        boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    employees {
+        uuid id PK
+        uuid company_id FK
+        uuid site_id FK "nullable = not assigned"
+        varchar(30) employee_number "nullable, unique per company"
+        varchar(120) full_name
+        varchar(80) job_title "nullable"
+        varchar(20) phone "nullable"
+        employee_status status
+        timestamptz consent_given_at "nullable = no consent yet"
+        uuid consent_recorded_by FK "nullable; the user who recorded it"
+        timestamptz consent_withdrawn_at "nullable"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    devices {
+        uuid id PK
+        uuid company_id FK
+        uuid employee_id FK "nullable = unassigned; one device per employee"
+        varchar(64) serial_number UK
+        varchar(255) api_key_hash "SHA-256 digest"
+        boolean is_active
+        timestamptz last_seen_at "nullable, offline is computed"
+        timestamptz created_at
+    }
+    geofences {
+        uuid id PK
+        uuid site_id FK
+        varchar(120) name
+        jsonb boundary "GeoJSON Polygon"
+        boolean is_outdoor "the midday ban applies"
+        boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    work_sessions {
+        bigserial id PK
+        uuid company_id FK
+        uuid employee_id FK
+        uuid site_id FK
+        uuid device_id FK "the device worn, snapshot"
+        timestamptz started_at "device clock"
+        timestamptz ended_at "nullable = still on site"
+        session_end_reason end_reason "nullable; set when the session ends"
+        timestamptz created_at "server clock"
+    }
+    telemetry_logs {
+        bigserial id PK
+        bigint session_id FK "no position without a session"
+        double latitude
+        double longitude
+        smallint battery_percent "nullable"
+        timestamptz recorded_at "device clock"
+        timestamptz received_at "server clock"
+    }
+    alerts {
+        uuid id PK
+        bigint session_id FK
+        alert_type alert_type
+        uuid geofence_id FK "nullable; mandatory for midday_ban"
+        double latitude "last position inside the site"
+        double longitude
+        integer limit_minutes "nullable; hours alerts only"
+        integer observed_minutes "nullable; hours alerts only"
+        timestamptz triggered_at "device clock"
+        timestamptz created_at "server clock"
+        uuid acknowledged_by FK "nullable; the user who saw it"
+        timestamptz acknowledged_at "nullable"
+        timestamptz resolved_at "nullable = still open"
+    }
+    employee_current_state {
+        uuid employee_id PK "also FK to employees"
+        bigint session_id FK "nullable = off site"
+        uuid geofence_id FK "nullable = in no zone"
+        double latitude "last position inside a site"
+        double longitude
+        smallint battery_percent "nullable"
+        timestamptz recorded_at "device clock"
+        timestamptz received_at "server clock"
+    }
+    tasks {
+        uuid id PK
+        uuid company_id FK
+        uuid site_id FK
+        uuid geofence_id FK "nullable; a zone of the same site"
+        uuid employee_id FK "the worker it is given to"
+        uuid created_by FK
+        varchar(150) title
+        text description "nullable"
+        task_status status
+        date scheduled_for "default today, Saudi time"
+        timestamptz completed_at "nullable; set when done"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+```
+
+`PK` = primary key, `FK` = foreign key, `UK` = unique. A column is mandatory unless it is marked *nullable*.
+
+#### Key Design Decisions
+
+1. **The work session is the centre of the record.** `work_sessions` holds one row for each continuous presence of a worker on a site, so hours are a simple sum. Every position and every alert belongs to a session.
+2. **The live state is separated from the history.** The live map reads `employee_current_state`, one row per employee that is updated in place, and never the growing `telemetry_logs`. Its speed therefore does not degrade over time.
+3. **Tenant isolation is part of the schema.** Tables owned by a company carry `company_id`, and composite foreign keys that include it make the database refuse a link between rows of two companies.
+4. **Privacy is enforced by the structure.** A position cannot be stored outside a work session, and a trigger refuses to open a session for a worker who has not consented.
+5. **At most one unresolved alert of each type per session.** A partial unique index guarantees it, so a worker who stays in a banned zone produces one alert, not hundreds.
+6. **Records are deactivated, not deleted.** Foreign keys use `ON DELETE RESTRICT`, so anything that has history cannot be removed.
+7. **Types follow the use.** Identifiers that appear in URLs are UUIDs; the two high-volume tables use sequential `BIGSERIAL` keys; all timestamps are `TIMESTAMPTZ`.
+
+### 2.3 Front-End Components
+
+*To be added by the Frontend lead: the main UI components and their interactions.*
+
 ---
 
 ## 3. Create High-Level Sequence Diagrams
