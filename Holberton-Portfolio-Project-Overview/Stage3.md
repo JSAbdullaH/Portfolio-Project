@@ -643,50 +643,59 @@ This section defines how our platform communicates with the outside world. It li
 
 ```mermaid
 flowchart TB
-    WEB["Web Dashboard<br/>(Company Admin / Site Manager)"]
-    GMAPS["Google Maps JavaScript API<br/>(External)"]
-    DEV["IoT Wearable Devices<br/>(GPS)"]
-    TRC["Traccar<br/>(External middleware)"]
-    SIM["Device Simulator<br/>(TR-02)"]
+    WEB["Web Dashboard<br/>Admin / Site Manager"]
+    DEV["IoT Wearables<br/>GPS"]
+    SIM["Device Simulator<br/>TR-02"]
+    GMAPS["Google Maps API<br/>External"]
+    TRC["Traccar<br/>External middleware"]
 
-    subgraph API["Internal REST API — Node.js + Express (JSON)"]
+    subgraph API["Internal REST API · Node.js + Express (JSON)"]
         direction TB
-        MW["Auth Middleware (JWT) + Company Data Isolation"]
-        subgraph R1[" "]
-            direction LR
-            AUTH["Auth"] --> COMP["Companies<br/>(created via /auth/register)"]
+        JWT["JWT Authentication<br/>Dashboard users · Company isolation"]
+        KEY["Device / API Key Authentication<br/>Traccar · Simulator"]
+        subgraph MGMT["Backend API Modules"]
+            direction TB
+            subgraph M1[" "]
+                direction LR
+                AUTH["Auth"] ~~~ COMP["Companies"] ~~~ USERS["Users"]
+            end
+            subgraph M2[" "]
+                direction LR
+                SITES["Sites"] ~~~ EMP["Employees"] ~~~ DEVS["Devices"]
+            end
+            subgraph M3[" "]
+                direction LR
+                TASKS["Tasks"] ~~~ HIST["History"] ~~~ REP["Reports (PDF)"]
+            end
+            M1 ~~~ M2 ~~~ M3
         end
-        subgraph R2[" "]
-            direction LR
-            USERS["Users"] ~~~ SITES["Sites"] ~~~ EMP["Employees"] ~~~ DEVS["Devices"]
-        end
-        subgraph R3[" "]
-            direction LR
+        subgraph CORE["Telemetry processing"]
+            direction TB
             TEL["Telemetry"] --> GEO["Geofences"] --> ALR["Alerts"]
         end
-        subgraph R4[" "]
-            direction LR
-            TASKS["Tasks"] ~~~ HIST["History"] ~~~ REP["Reports (PDF)"]
-        end
-        MW ~~~ R1 ~~~ R2 ~~~ R3 ~~~ R4
+        JWT -->|"Dashboard requests"| MGMT
+        KEY -->|"Location readings"| CORE
     end
 
     DB[("PostgreSQL")]
 
     WEB --> GMAPS
-    WEB -->|"HTTPS / JSON"| API
+    WEB -->|"HTTPS / JSON"| JWT
     DEV --> TRC
-    TRC -->|"Position forwarding (JSON)"| API
-    SIM -->|"POST /telemetry"| API
-    API --> DB
+    TRC -->|"Position forwarding"| KEY
+    SIM -->|"POST /telemetry"| KEY
+    API <-->|"Read / Write"| DB
 
     classDef ext stroke-dasharray:6 4
     class GMAPS,TRC ext
 
-    style R1 fill:transparent,stroke:transparent
-    style R2 fill:transparent,stroke:transparent
-    style R3 fill:transparent,stroke:transparent
-    style R4 fill:transparent,stroke:transparent
+    style API fill:transparent,stroke:#8b949e,stroke-width:1px
+    style MGMT fill:transparent,stroke:#6e7681,stroke-width:1px,stroke-dasharray:4 4
+    style CORE fill:transparent,stroke:#6e7681,stroke-width:1px,stroke-dasharray:4 4
+    style M1 fill:transparent,stroke:transparent
+    style M2 fill:transparent,stroke:transparent
+    style M3 fill:transparent,stroke:transparent
+ R4 fill:transparent,stroke:transparent
 ```
 
 ---
