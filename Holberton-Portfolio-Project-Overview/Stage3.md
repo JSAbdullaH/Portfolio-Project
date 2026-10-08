@@ -419,7 +419,205 @@ The purpose of this task is to detail the internal structure of the system: the 
 
 ### 2.1 Back-End Classes
 
-*To be added by the Backend lead: the main classes, their attributes and their methods.*
+The backend is organized around the domain classes below. Each class maps to a table in the database design (Section 2.2), and each is exposed through one or more internal API modules (Section 4). Methods hold the business rules the backend applies: site and zone checks, shift windows, consent, offline detection, and the midday ban window.
+
+```mermaid
+classDiagram
+    direction LR
+
+    class Company {
+        +UUID id
+        +String name
+        +Number dailyLimitMinutes
+        +Date middayBanFromDate
+        +Date middayBanToDate
+        +Time middayBanStartTime
+        +Time middayBanEndTime
+        +Number middayBanLeadMinutes
+        +isInMiddayBanWindow(at) Boolean
+    }
+    class User {
+        +UUID id
+        +UUID companyId
+        +String fullName
+        +String email
+        +String passwordHash
+        +UserRole role
+        +Boolean isActive
+        +isAdmin() Boolean
+    }
+    class Site {
+        +UUID id
+        +UUID companyId
+        +String name
+        +GeoJSON boundary
+        +Time shiftStart
+        +Time shiftEnd
+        +Boolean isActive
+        +contains(latitude, longitude) Boolean
+        +isDuringShift(at) Boolean
+    }
+    class Employee {
+        +UUID id
+        +UUID companyId
+        +UUID siteId
+        +String employeeNumber
+        +String fullName
+        +String jobTitle
+        +String phone
+        +EmployeeStatus status
+        +Date consentGivenAt
+        +UUID consentRecordedBy
+        +Date consentWithdrawnAt
+        +hasActiveConsent() Boolean
+        +deactivate() void
+    }
+    class Device {
+        +UUID id
+        +UUID companyId
+        +UUID employeeId
+        +String serialNumber
+        +String apiKeyHash
+        +Boolean isActive
+        +Date lastSeenAt
+        +isAssigned() Boolean
+        +isOffline(now) Boolean
+    }
+    class Geofence {
+        +UUID id
+        +UUID siteId
+        +String name
+        +GeoJSON boundary
+        +Boolean isOutdoor
+        +Boolean isActive
+        +contains(latitude, longitude) Boolean
+    }
+    class WorkSession {
+        +Number id
+        +UUID companyId
+        +UUID employeeId
+        +UUID siteId
+        +UUID deviceId
+        +Date startedAt
+        +Date endedAt
+        +SessionEndReason endReason
+        +Date createdAt
+        +isOpen() Boolean
+        +minutes(now) Number
+    }
+    class TelemetryReading {
+        +Number id
+        +Number sessionId
+        +Number latitude
+        +Number longitude
+        +Number batteryPercent
+        +Date recordedAt
+        +Date receivedAt
+    }
+    class Alert {
+        +UUID id
+        +Number sessionId
+        +AlertType alertType
+        +UUID geofenceId
+        +Number latitude
+        +Number longitude
+        +Number limitMinutes
+        +Number observedMinutes
+        +Date triggeredAt
+        +Date createdAt
+        +UUID acknowledgedBy
+        +Date acknowledgedAt
+        +Date resolvedAt
+        +status() AlertStatus
+    }
+    class EmployeeState {
+        +UUID employeeId
+        +Number sessionId
+        +UUID geofenceId
+        +Number latitude
+        +Number longitude
+        +Number batteryPercent
+        +Date recordedAt
+        +Date receivedAt
+        +isOnSite() Boolean
+        +isStale(now) Boolean
+    }
+    class Task {
+        +UUID id
+        +UUID companyId
+        +UUID siteId
+        +UUID geofenceId
+        +UUID employeeId
+        +UUID createdBy
+        +String title
+        +String description
+        +TaskStatus status
+        +Date scheduledFor
+        +Date completedAt
+        +changeStatus(status) void
+    }
+    class DailyWorkRecord {
+        <<view>>
+        +UUID companyId
+        +UUID employeeId
+        +UUID siteId
+        +Date workDate
+        +Date firstInAt
+        +Date lastOutAt
+        +Number sessionCount
+        +Number totalMinutes
+    }
+    class Report {
+        +UUID id
+        +UUID companyId
+        +UUID siteId
+        +UUID createdBy
+        +String referenceNumber
+        +ReportType reportType
+        +Date periodStart
+        +Date periodEnd
+        +String filePath
+        +String sha256
+        +Date createdAt
+        +matchesFile(sha256) Boolean
+    }
+
+    Company "1" --> "*" User : has
+    Company "1" --> "*" Site : runs
+    Company "1" --> "*" Employee : employs
+    Company "1" --> "*" Device : owns
+    Company "1" --> "*" Report : archives
+    Site "1" --> "*" Geofence : contains
+    Site "0..1" --> "*" Employee : is assigned
+    Employee "1" --> "0..1" Device : wears
+    Employee "1" --> "0..1" EmployeeState : has
+    Employee "1" --> "*" WorkSession : works
+    Site "1" --> "*" WorkSession : hosts
+    WorkSession "1" --> "*" TelemetryReading : collects
+    WorkSession "1" --> "*" Alert : raises
+    User "1" --> "*" Task : creates
+    User "1" --> "*" Report : generates
+    Site "1" --> "*" Task : has
+    Site "1" --> "*" Report : is reported in
+    Employee "1" --> "*" Task : is given
+    WorkSession ..> DailyWorkRecord : is summed into
+```
+
+| Class | Responsibility | API module (Section 4) |
+|---|---|---|
+| `Company` | Company record and its rule settings (daily limit, midday ban window) | Auth (register) |
+| `User` | Dashboard accounts and roles (`company_admin`, `site_manager`) | Auth, Users |
+| `Site` | Site boundary and shift; checks whether a position is on site and within the shift | Sites |
+| `Employee` | Worker profile and consent; only employees with active consent are tracked | Employees |
+| `Device` | Wearable identity, API key, and online status | Devices, Telemetry (device authentication) |
+| `WorkSession` | A period an employee spends on site during the shift; locations are stored only inside one | Telemetry, History |
+| `TelemetryReading` | A stored location reading (append-only) | Telemetry, History |
+| `EmployeeState` | The latest known state of each employee, used by the live map | Live locations, Employees |
+| `Geofence` | Work zone inside a site; checks whether a position is inside the zone | Geofences, Telemetry |
+| `Alert` | Zone exit, working-hours, and midday ban alerts raised by the rule engine | Alerts |
+| `Task` | Task assigned to an employee, optionally in a zone | Tasks |
+| `DailyWorkRecord` | Read-only view that sums an employee's work sessions per day | History (daily record), Reports |
+| `Report` | Metadata of a generated PDF report, including its reference number and SHA-256 fingerprint | Reports |
 
 ### 2.2 Database Design
 
