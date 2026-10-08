@@ -695,7 +695,6 @@ flowchart TB
     style M1 fill:transparent,stroke:transparent
     style M2 fill:transparent,stroke:transparent
     style M3 fill:transparent,stroke:transparent
- R4 fill:transparent,stroke:transparent
 ```
 
 ---
