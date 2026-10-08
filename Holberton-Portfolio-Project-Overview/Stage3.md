@@ -192,12 +192,10 @@ flowchart LR
     subgraph FIELD["Field / Site"]
         WORKER["Site Worker"]
         DEVICE["Hardware Device"]
-        MOBILE["Mobile Application"]
         SENSOR["Sensors"]
 
         WORKER -->|"Location Data"| DEVICE
         DEVICE -->|"4G / GPS / Health Data"| MOBILE
-        MOBILE -->|"Sensor Data"| SENSOR
     end
 
     INTERNET(("Internet"))
