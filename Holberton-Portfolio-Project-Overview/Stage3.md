@@ -632,6 +632,163 @@ erDiagram
 ## 3. Create High-Level Sequence Diagrams
 
 
+# System Architecture Sequence Diagrams
+
+This document contains the sequence diagrams for the core system workflows, formatted for native rendering on GitHub using Mermaid.js.
+
+## 1. Authentication & Token Management
+
+This diagram outlines the registration, login, and token refresh/logout flows for a Company Admin.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Company Admin
+    participant Web as Web Dashboard
+    participant API as Express REST API
+    participant DB as PostgreSQL
+
+    rect rgb(30, 30, 30)
+    note right of Admin: Registration
+    end
+    Admin->>Web: Fill in company and admin details
+    Web->>API: POST /auth/register
+    API->>API: Validate input and hash password
+    API->>DB: INSERT companies, users (role = company_admin)
+    DB-->>API: company_id, user_id
+    API->>API: Issue access token (JWT) and refresh token
+    API->>DB: INSERT refresh_tokens (token_hash)
+    API-->>Web: 201 access_token, refresh_token, user, company
+    Web-->>Admin: Redirect to dashboard
+
+    rect rgb(30, 30, 30)
+    note right of Admin: Login
+    end
+    Admin->>Web: Enter email and password
+    Web->>API: POST /auth/login
+    API->>DB: SELECT user by email
+    alt Invalid credentials or inactive user
+        API-->>Web: 401 Unauthorized
+        Web-->>Admin: Show error message
+    else Valid credentials
+        API->>API: Verify password hash
+        API->>DB: INSERT refresh_tokens
+        API-->>Web: 200 access_token, refresh_token, expires_in, user
+        Web-->>Admin: Open dashboard
+    end
+
+    rect rgb(30, 30, 30)
+    note right of Admin: Token refresh and logout
+    end
+    Web->>API: POST /auth/refresh (refresh_token)
+    API->>DB: Check token_hash, expires_at, revoked_at
+    API-->>Web: New access_token
+    Admin->>Web: Click logout
+    Web->>API: POST /auth/logout (refresh_token)
+    API->>DB: UPDATE refresh_tokens SET revoked_at = now()
+    API-->>Web: 204 No Content
+```
+
+## 2. IoT Telemetry Processing
+
+This diagram shows how device coordinates are ingested, validated, checked against geofences, and stored.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Device as IoT Wearable / Simulator
+    participant Traccar as Traccar
+    participant API as Express REST API
+    participant DB as PostgreSQL
+
+    Device->>Traccar: GPS position (native protocol)
+    Note over Device, Traccar: The simulator calls POST /telemetry directly
+    Traccar->>API: POST /telemetry with X-API-Key (serial, lat, lng, battery, recorded_at)
+    API->>DB: Find device by serial_number and verify api_key_hash
+    
+    alt Unknown device, invalid key, or inactive device
+        API-->>Traccar: 401 Unauthorized
+    else Device authenticated
+        API->>API: Validate payload (coordinates, timestamp)
+        
+        alt Invalid reading
+            API->>DB: Log rejected reading
+            API-->>Traccar: 422 Unprocessable
+        else Valid reading
+            API->>DB: UPDATE devices SET last_seen_at
+            API->>DB: Get assigned employee, site and consent status
+            API->>API: Is the point inside the site boundary?
+            
+            alt Inside site boundary
+                API->>DB: Get open work_session or create one
+                API->>DB: INSERT telemetry_logs
+                API->>DB: Load active geofences of the site
+                API->>API: Point-in-polygon check per geofence
+                API->>DB: UPSERT employee_current_state (position, geofence_id, battery)
+                
+                opt Rule violated (zone exit, midday ban, daily limit)
+                    API->>DB: INSERT alerts (one unresolved alert per type)
+                end
+                
+                API-->>Traccar: 201 stored, location_status, alerts_created
+            else Outside site boundary
+                API->>DB: End open work_session (end_reason)
+                API->>DB: UPDATE employee_current_state (session_id = NULL)
+                API-->>Traccar: 200 stored = false, location_status = off_site
+            end
+        end
+    end
+```
+
+## 3. Live Map & Alert Management
+
+This diagram details the Site Manager's view, polling for real-time locations, and handling alerts.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Manager as Site Manager
+    participant Web as Web Dashboard
+    participant Maps as Google Maps API
+    participant API as Express REST API
+    participant DB as PostgreSQL
+
+    Manager->>Web: Open live map for a site
+    Web->>Maps: Load map and site/zone polygons
+    Web->>API: GET /geofences?site_id (JWT)
+    API->>DB: SELECT geofences WHERE company_id and site_id
+    DB-->>API: Zones
+    API-->>Web: Zone list
+
+    loop Every 5-10 seconds
+        Web->>API: GET /locations/live?site_id (JWT)
+        API->>API: Verify JWT and role, apply company_id isolation
+        API->>DB: SELECT employee_current_state (not telemetry_logs)
+        DB-->>API: Latest position per worker
+        API-->>Web: location_status, zone, lat, lng, battery
+        Web->>Maps: Update worker markers
+    end
+
+    Web->>API: GET /alerts?status=open (JWT)
+    API->>DB: SELECT alerts WHERE company_id
+    DB-->>API: Open alerts
+    API-->>Web: Open alerts
+    Web-->>Manager: Show alert notification
+
+    Manager->>Web: Click worker marker or alert
+    Web->>API: GET /employees/:id
+    API->>DB: SELECT employee, device, current state
+    DB-->>API: Employee profile
+    API-->>Web: Employee profile
+    Web-->>Manager: Show worker details
+
+    Manager->>Web: Mark alert as handled
+    Web->>API: PATCH /alerts/:id (acknowledged = true)
+    API->>DB: UPDATE alerts SET acknowledged_by, acknowledged_at
+    DB-->>API: id, status, acknowledged_by, acknowledged_at
+    API-->>Web: Alert marked as handled
+```
+
 ---
 
 ## 4. Document External and Internal APIs
