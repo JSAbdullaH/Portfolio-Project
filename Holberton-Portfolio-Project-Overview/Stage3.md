@@ -908,7 +908,7 @@ All paths are relative to the base URL `/api/v1`.
 
 #### 5.1.1 Version Control & Repository Management
 * **Tool:** Git hosted on GitHub.
-* **Repository Architecture:** Structured mono-repository or multi-repository configuration separating frontend (`/client` - Next.js/React) and backend (`/server` - Express.js).
+* **Repository Architecture:** Structured mono-repository or multi-repository configuration separating frontend (`/FrontEnd` - React) and backend (`/Backend` - Express.js).
 * **Access Control:** Restricted push permissions on protected primary branches (`main` and `develop`); branch protection rules require passed CI checks and mandatory code reviews before merging.
 
 #### 5.1.2 Branching Strategy (GitFlow Model)
@@ -926,7 +926,7 @@ All commits must strictly follow the **Conventional Commits** standard (`<type>(
 
 * **Types:**
   * `feat`: A new user feature or REST API route.
-  * `fix`: A bug fix in Express controllers, Next.js components, or DB queries.
+  * `fix`: A bug fix in Express controllers, React components, or DB queries.
   * `docs`: Documentation updates.
   * `style`: Formatting, semicolons, linter fixes (no logic change).
   * `refactor`: Restructuring backend middleware or React component code without changing behavior.
@@ -935,12 +935,12 @@ All commits must strictly follow the **Conventional Commits** standard (`<type>(
 
 * **Examples:**
   * `feat(api): add JWT authentication endpoint in Express`
-  * `fix(ui): resolve Next.js dynamic routing hydration error`
-  * `chore(docker): optimize multi-stage Docker build for Next.js`
+  * `fix(ui): resolve React dynamic routing hydration error`
+  * `chore(docker): optimize multi-stage Docker build for React`
 
-#### 6.1.4 Code Review & Pull Request (PR) Workflow
+#### 5.1.4 Code Review & Pull Request (PR) Workflow
 1. **PR Creation:** Developers open a PR targeting `develop` from a `feature/*` branch and link the corresponding issue.
-2. **Automated Status Checks:** GitHub Actions triggers automated linting (`ESLint`), static analysis, and unit test suites across the Express and Next.js projects.
+2. **Automated Status Checks:** GitHub Actions triggers automated linting (`ESLint`), static analysis, and unit test suites across the Express and React projects.
 3. **Peer Review:** At least **1 mandatory code review approval** is required from a team member, assessing readability, security, database query efficiency, and React component performance.
 4. **Merge Execution:** Approved PRs are integrated using **Squash and Merge** to maintain a linear, easy-to-audit commit history.
 
@@ -959,7 +959,7 @@ All commits must strictly follow the **Conventional Commits** standard (`<type>(
 
 * **Static Code Analysis:** ESLint and Prettier enforce formatting guidelines pre-commit via `husky` hooks.
 * **Unit Testing:**
-  * **Frontend (Next.js/React):** React Testing Library (RTL) and Jest verify state changes, UI component rendering, and custom hooks.
+  * **Frontend (React):** React Testing Library (RTL) and Jest verify state changes, UI component rendering, and custom hooks.
   * **Backend (Express.js):** Jest verifies utility logic, middleware execution, and controller helper functions.
 * **Integration Testing:** Supertest executes HTTP requests against live Express routes connected to an isolated test **PostgreSQL Docker container**, verifying SQL queries and JSON responses.
 * **End-to-End (E2E) Testing:** Playwright or Cypress runs automated browser tests covering critical end-to-end user journeys (e.g., User Signup -> Login -> Dashboard -> Database Persistence).
@@ -968,10 +968,10 @@ All commits must strictly follow the **Conventional Commits** standard (`<type>(
 
 | Category | Tool | Application |
 | :--- | :--- | :--- |
-| **Linting & Formatting** | ESLint / Prettier | Enforces coding rules across Next.js and Express modules. |
+| **Linting & Formatting** | ESLint / Prettier | Enforces coding rules across Express modules. |
 | **Unit & Component Testing** | Jest / React Testing Library | Tests isolated frontend React components and backend functions. |
 | **API & Integration Testing** | Supertest / Postman | Validates Express API endpoints, HTTP status codes, and PostgreSQL interactions. |
-| **E2E Testing** | Playwright / Cypress | Simulates browser interactions across full-stack Next.js/Express workflows. |
+| **E2E Testing** | Playwright / Cypress | Simulates browser interactions across full-stack Express workflows. |
 | **Containerized Test DB** | Docker (PostgreSQL) | Spins up an isolated PostgreSQL instance during CI integration test execution. |
 
 #### 5.2.3 Deployment Pipeline (CI/CD)
@@ -987,7 +987,7 @@ The continuous deployment pipeline uses GitHub Actions to automate container bui
 ```
 
 1. **Staging Environment:** Automated deployment triggered upon merging into `develop`. Runs Docker Compose to update the staging container cluster for full integration testing.
-2. **Production Environment:** Triggered upon merging into `main`. Deploys multi-stage, production-optimized Docker containers for the Next.js frontend, Express backend, and PostgreSQL database with automated health checks.
+2. **Production Environment:** Triggered upon merging into `main`. Deploys multi-stage, production-optimized Docker containers for the React frontend, Express backend, and PostgreSQL database with automated health checks.
 
 #### 5.2.4 Defect Categorization & Management
 
@@ -996,46 +996,48 @@ The continuous deployment pipeline uses GitHub Actions to automate container bui
 | `P0` | Critical | < 4 hours | Production down or database corruption. Immediate `hotfix/*` created from `main`. |
 | `P1` | High | < 24 hours | Major functional defect in core flow. Must be resolved before next staging release. |
 | `P2` | Medium | Next Sprint | Non-blocking functional or performance bug. Logged into GitHub Issues backlog. |
-| `P3` | Low | Backlog | Visual polish, cosmetic adjustments, or minor Next.js/React styling issues. |
+| `P3` | Low | Backlog | Visual polish, cosmetic adjustments, or minor React styling issues. |
 
 ---
 
 
 ## 6. Technical Justifications
 
-* **Rationale:** Next.js builds on top of React.js to provide a production-ready framework with built-in Server-Side Rendering (SSR), Static Site Generation (SSG), and dynamic client-side rendering.
+### 6.1 Frontend Architecture: React.js
+
+* **Rationale:** React.js is a component-driven JavaScript library selected for building an interactive, modular Single-Page Application (SPA) user interface.
 * **Benefits:**
-  * **Performance & SEO:** Server-Side Rendering delivers pre-rendered HTML to the client, accelerating First Contentful Paint (FCP) and maximizing search engine crawlability.
-  * **Component-Driven Development:** React’s declarative component architecture encourages code reuse, modular design, and manageable state flows.
-  * **Built-in Optimizations:** Next.js provides automatic code-splitting, route prefetching, and built-in image optimization modules out of the box.
-* **Trade-offs & Mitigations:** Hydration overhead on complex interactive pages. Mitigated by strategically balancing Server Components and Client Components to minimize bundle size.
+  * **Component-Driven Development:** Encourages code reusability, modular architecture, and predictable unidirectional data flows.
+  * **Virtual DOM Performance:** Minimizes direct DOM manipulations by calculating diffs in memory, ensuring fast client-side rendering and responsive UI interactions.
+  * **Ecosystem & Community:** Rich ecosystem of mature libraries for client-side routing (React Router), global state management (Zustand/Redux), and UI components.
+* **Trade-offs & Mitigations:** Client-Side Rendering (CSR) can lead to larger initial JavaScript bundle sizes and delayed initial page render. Mitigated by implementing code-splitting (`React.lazy` / dynamic imports), route-based lazy loading, and asset compression.
 
 ### 6.2 Backend Architecture: Express.js (Node.js)
 
-* **Rationale:** Express.js is a lightweight, minimal, and unopinionated Web framework for Node.js designed for building scalable RESTful APIs.
+* **Rationale:** Express.js is a lightweight, unopinionated web framework for Node.js designed to build scalable, decoupled RESTful APIs.
 * **Benefits:**
-  * **Non-Blocking I/O:** Leverages Node.js's asynchronous event loop to handle high volumes of concurrent HTTP connections efficiently with low memory footprint.
-  * **Flexibility & Ecosystem:** Seamlessly integrates with middleware for CORS management, JWT authentication, request body parsing, and ORM/query builders.
-  * **Language Parity:** Writing JavaScript/TypeScript across both frontend (Next.js) and backend (Express) streamlines development velocity and code sharing.
-* **Trade-offs & Mitigations:** CPU-intensive computations can block the single-threaded event loop. Mitigated by offloading heavy background operations to asynchronous queues or worker threads.
+  * **Non-Blocking I/O:** Leverages Node.js's asynchronous event loop to process high volumes of concurrent HTTP requests efficiently with low memory consumption.
+  * **Flexibility & Ecosystem:** Integrates seamlessly with middleware for CORS policy handling, JWT authentication, request body parsing, and database ORMs/query builders.
+  * **Language Uniformity:** Utilizing JavaScript/TypeScript across both frontend (React) and backend (Express) simplifies development velocity, context switching, and code sharing.
+* **Trade-offs & Mitigations:** CPU-intensive computations can block the single-threaded event loop. Mitigated by offloading heavy background tasks to asynchronous job queues or worker threads.
 
 ### 6.3 Database Engine: PostgreSQL
 
-* **Rationale:** PostgreSQL is an enterprise-grade, open-source Relational Database Management System (RDBMS) chosen to handle structured data relationships with strict data integrity.
+* **Rationale:** PostgreSQL is an enterprise-grade, open-source Relational Database Management System (RDBMS) selected to manage structured data relationships with strict transactional guarantees.
 * **Benefits:**
-  * **ACID Compliance:** Guarantees full transactional safety, preventing partial updates or data corruption during complex multi-table transactions.
-  * **Relational Integrity:** Strictly enforces foreign key constraints, schemas, and indexing mechanisms.
-  * **Extensibility (JSONB Support):** Supports JSONB data types, allowing the storage and querying of unstructured/semi-structured data alongside relational tables when needed.
-* **Trade-offs & Mitigations:** Complex schema modifications require careful migration planning. Mitigated by utilizing structured database migration scripts integrated into the Express deployment workflow.
+  * **ACID Compliance:** Guarantees full transactional safety, preventing partial updates or data corruption during complex multi-table operations.
+  * **Relational Integrity:** Strictly enforces schemas, primary/foreign key constraints, and indexing mechanisms.
+  * **Extensibility (JSONB Support):** Supports JSONB data types, allowing high-performance indexing and querying of semi-structured data alongside relational tables when necessary.
+* **Trade-offs & Mitigations:** Schema modifications require structured migration steps. Mitigated by using database migration tools integrated into the Express backend deployment workflow.
 
 ### 6.4 Infrastructure & Containerization: Docker & Docker Compose
 
-* **Rationale:** Docker encapsulates the Next.js client, Express API, and PostgreSQL database into lightweight, isolated containers.
+* **Rationale:** Docker encapsulates the React client, Express API, and PostgreSQL database into lightweight, isolated container environments.
 * **Benefits:**
-  * **Environment Consistency:** Eliminates "works on my machine" issues by standardizing Node.js runtime versions, environment variables, and PostgreSQL configurations across development, staging, and production.
-  * **Simplified Orchestration:** Docker Compose enables one-command local environment execution (`docker-compose up`) for all three application tiers.
-  * **Efficient Deployments:** Multi-stage Docker builds reduce container image footprints, minimizing deployment speeds and resource utilization.
-* **Trade-offs & Mitigations:** Slightly higher initial operational setup time. Mitigated by using standardized Dockerfile templates and caching base layers in CI/CD pipelines.
+  * **Environment Consistency:** Eliminates "works on my machine" issues by standardizing Node.js runtimes, environment variables, and PostgreSQL versions across local development, staging, and production.
+  * **Simplified Orchestration:** Docker Compose enables single-command execution (`docker compose up`) for the entire multi-container application stack.
+  * **Efficient Deployments:** Multi-stage Docker builds separate build toolchains from runtime environments, producing minimal image sizes for faster deployments.
+* **Trade-offs & Mitigations:** Slightly higher initial setup and container management overhead. Mitigated by using standardized Dockerfiles and caching base build layers in CI/CD pipelines.
 
 ---
 
