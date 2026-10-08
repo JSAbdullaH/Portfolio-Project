@@ -713,42 +713,41 @@ All paths are relative to the base URL `/api/v1`.
 
 **Roles:** `Public` = no token · `Admin` = company_admin · `Manager` = site_manager (Admin can do everything a Manager can) · `Device` = device API key
 
-| # | Method | Endpoint | Purpose | Access | Requirement |
-|---|---|---|---|---|---|
-| 1 | POST | `/auth/register` | Register a company and its admin account | Public | US-01 |
-| 2 | POST | `/auth/login` | Log in and receive access and refresh tokens | Public | US-02 |
-| 3 | POST | `/auth/refresh` | Get a new access token using a refresh token | Public (refresh token) | US-02, NFR-03 |
-| 4 | POST | `/auth/logout` | Log out by revoking the refresh token | Admin, Manager | US-02 |
-| 5 | POST | `/users` | Create a Site Manager account | Admin | US-04 |
-| 6 | GET | `/users` | List the company's user accounts | Admin | US-04 |
-| 7 | POST | `/sites` | Create a project site with its boundary and shift | Admin | Stage 2 – Multiple Sites |
-| 8 | GET | `/sites` | List the company's sites | Admin, Manager | Stage 2 – Multiple Sites |
-| 9 | PATCH | `/sites/:id` | Update a site | Admin | Stage 2 – Multiple Sites |
-| 10 | DELETE | `/sites/:id` | Deactivate a site | Admin | Stage 2 – Multiple Sites |
-| 11 | POST | `/employees` | Create an employee profile and record consent | Admin | US-06, Stage 2 – Consent |
-| 12 | GET | `/employees` | List, search, and filter employees | Admin, Manager | US-06, US-10 |
-| 13 | GET | `/employees/:id` | View an employee profile with status and device | Admin, Manager | US-06, US-09 |
-| 14 | PATCH | `/employees/:id` | Edit a profile, or record or withdraw consent | Admin | US-06, Stage 2 – Consent |
-| 15 | DELETE | `/employees/:id` | Deactivate an employee (records are kept) | Admin | US-06 |
-| 16 | POST | `/devices` | Register an IoT device and issue its API key | Admin | US-07 |
-| 17 | GET | `/devices` | List devices with online status and battery | Admin, Manager | US-14, US-15 |
-| 18 | PATCH | `/devices/:id` | Assign or unassign a device to an employee | Admin | US-08 |
-| 19 | POST | `/telemetry` | Receive a location reading from Traccar or the simulator | Device | US-11, US-12, US-13 |
-| 20 | GET | `/locations/live` | Current state of each worker for the live map | Admin, Manager | US-16, US-18, US-19 |
-| 21 | POST | `/geofences` | Create a work zone | Admin, Manager | US-17 |
-| 22 | GET | `/geofences` | List work zones of a site | Admin, Manager | US-17 |
-| 23 | PATCH | `/geofences/:id` | Update a work zone | Admin, Manager | US-17, User Types (0.3) |
-| 24 | DELETE | `/geofences/:id` | Deactivate a work zone | Admin, Manager | US-17, User Types (0.3) |
-| 25 | GET | `/alerts` | List alerts with filters | Admin, Manager | US-20, US-22 |
-| 26 | PATCH | `/alerts/:id` | Acknowledge an alert | Admin, Manager | US-23 |
-| 27 | POST | `/tasks` | Create a task and assign it to an employee | Admin, Manager | US-25 |
-| 28 | GET | `/tasks` | List tasks (e.g. all tasks of one employee) | Admin, Manager | US-27 |
-| 29 | PATCH | `/tasks/:id` | Update a task's status | Admin, Manager | US-26 |
-| 30 | GET | `/employees/:id/history` | Movement history of an employee for one day | Admin, Manager | US-28, US-30 |
-| 31 | GET | `/employees/:id/daily-record` | Daily record: attendance, minutes worked, alerts, tasks | Admin, Manager | US-29 |
-| 32 | POST | `/reports` | Generate a PDF report with a reference number | Admin, Manager | US-31, US-32, Stage 2 – Reports |
-| 33 | GET | `/reports/:id/download` | Download a generated PDF report | Admin, Manager | US-32 |
-
+| # | Method | Endpoint | Purpose | Access | Input | Output |
+|---|---|---|---|---|---|---|
+| 1 | POST | `/auth/register` | Register a company and its admin account | Public | `{ company_name, full_name, email, password }` | `{ access_token, refresh_token, user, company }` |
+| 2 | POST | `/auth/login` | Log in and receive access and refresh tokens | Public | `{ email, password }` | `{ access_token, refresh_token, expires_in, user }` |
+| 3 | POST | `/auth/refresh` | Get a new access token using a refresh token | Public (refresh token) | `{ refresh_token }` | `{ access_token, expires_in }` |
+| 4 | POST | `/auth/logout` | Log out by revoking the refresh token | Admin, Manager | `{ refresh_token }` | `204` (no body) |
+| 5 | POST | `/users` | Create a Site Manager account | Admin | `{ full_name, email, password }` | `{ id, full_name, email, role, is_active }` |
+| 6 | GET | `/users` | List the company's user accounts | Admin |  ^`^t | `{ data: [user] }` |
+| 7 | POST | `/sites` | Create a project site with its boundary and shift | Admin | `{ name, boundary, shift_start, shift_end }` | `{ id, name, boundary, shift_start, shift_end, is_active }` |
+| 8 | GET | `/sites` | List the company's sites | Admin, Manager | `?is_active` | `{ data: [site] }` |
+| 9 | PATCH | `/sites/:id` | Update a site | Admin | `{ name?, boundary?, shift_start?, shift_end? }` | Updated site |
+| 10 | DELETE | `/sites/:id` | Deactivate a site | Admin |  ^`^t | `204` (no body) |
+| 11 | POST | `/employees` | Create an employee profile and record consent | Admin | `{ full_name, employee_number?, job_title?, phone?, site_id?, consent_given? }` | `{ id, full_name, site_id, status, consent_>
+| 12 | GET | `/employees` | List, search, and filter employees | Admin, Manager | `?search, site_id, status, has_consent, page, limit` | `{ data: [employee], page, limit, total }` |
+| 13 | GET | `/employees/:id` | View an employee profile with status and device | Admin, Manager |  ^`^t | `{ id, full_name, site, device, current_state }` |
+| 14 | PATCH | `/employees/:id` | Edit a profile, or record or withdraw consent | Admin | Any field of #11, or `{ consent_given }` | Updated employee |
+| 15 | DELETE | `/employees/:id` | Deactivate an employee (records are kept) | Admin |  ^`^t | `204` (no body) |
+| 16 | POST | `/devices` | Register an IoT device and issue its API key | Admin | `{ serial_number }` | `{ id, serial_number, employee_id, is_active, api_key }` |
+| 17 | GET | `/devices` | List devices with online status and battery | Admin, Manager | `?site_id, online` | `{ data: [{ id, serial_number, employee, online, battery_percent, last_seen_at }] }` |
+| 18 | PATCH | `/devices/:id` | Assign or unassign a device to an employee | Admin | `{ employee_id }` or `{ employee_id: null }` | Updated device |
+| 19 | POST | `/telemetry` | Receive a location reading from Traccar or the simulator | Device | Header `X-API-Key` + `{ serial_number, latitude, longitude, battery_percent, recorded_at }` | `{ id, session_id, >
+| 20 | GET | `/locations/live` | Current state of each worker for the live map | Admin, Manager | `?site_id` | `{ site_id, data: [{ employee_id, location_status, zone, latitude, longitude, battery_percent }] }`>
+| 21 | POST | `/geofences` | Create a work zone | Admin, Manager | `{ site_id, name, is_outdoor, boundary }` | `{ id, site_id, name, is_outdoor, boundary, is_active }` |
+| 22 | GET | `/geofences` | List work zones of a site | Admin, Manager | `?site_id, is_active` | `{ data: [geofence] }` |
+| 23 | PATCH | `/geofences/:id` | Update a work zone | Admin, Manager | `{ name?, is_outdoor?, boundary? }` | Updated geofence |
+| 24 | DELETE | `/geofences/:id` | Deactivate a work zone | Admin, Manager |  ^`^t | `204` (no body) |
+| 25 | GET | `/alerts` | List alerts with filters | Admin, Manager | `?site_id, employee_id, type, status, from, to, page, limit` | `{ data: [{ id, type, status, employee, zone, triggered_at }], total }` |
+| 26 | PATCH | `/alerts/:id` | Acknowledge an alert | Admin, Manager | `{ acknowledged: true }` | `{ id, status, acknowledged_by, acknowledged_at }` |
+| 27 | POST | `/tasks` | Create a task and assign it to an employee | Admin, Manager | `{ title, description?, employee_id, site_id, geofence_id?, scheduled_for? }` | `{ id, title, employee_id, site_id, status:>
+| 28 | GET | `/tasks` | List tasks (e.g. all tasks of one employee) | Admin, Manager | `?employee_id, site_id, status, scheduled_for` | `{ data: [task] }` |
+| 29 | PATCH | `/tasks/:id` | Update a task's status | Admin, Manager | `{ status }` | `{ id, status, completed_at }` |
+| 30 | GET | `/employees/:id/history` | Movement history of an employee for one day | Admin, Manager | `?date` | `{ employee_id, date, sessions: [{ session_id, points }] }` |
+| 31 | GET | `/employees/:id/daily-record` | Daily record: attendance, minutes worked, alerts, tasks | Admin, Manager | `?date` | `{ employee_id, date, attendance, alerts, tasks }` |
+| 32 | POST | `/reports` | Generate a PDF report with a reference number | Admin, Manager | `{ type, site_id, start_date }` | `{ id, reference_number, period, sha256, download_url }` |
+| 33 | GET | `/reports/:id/download` | Download a generated PDF report | Admin, Manager |  ^`^t | PDF file (`application/pdf`) |
 > **Note:** Companies are created only through `POST /auth/register` (US-01), so there are no `/companies` endpoints. Work sessions and alerts are generated automatically by the backend while processing telemetry, so they have no create endpoints.
 ---
 
