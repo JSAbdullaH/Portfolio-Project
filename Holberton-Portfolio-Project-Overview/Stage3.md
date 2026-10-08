@@ -696,7 +696,6 @@ flowchart TB
     style M2 fill:transparent,stroke:transparent
     style M3 fill:transparent,stroke:transparent
 ```
-
 ---
 
 ### 4.1 External APIs
@@ -751,9 +750,6 @@ All paths are relative to the base URL `/api/v1`.
 | 33 | GET | `/reports/:id/download` | Download a generated PDF report | Admin, Manager | US-32 |
 
 > **Resources without their own endpoints**
-> - **Companies:** a company is created only through `POST /auth/register` (US-01). Its rule settings (daily working limit and midday ban window) start with the default values from the database design. No user story asks to view or edit them, so the MVP has no `/companies` endpoints. The company of every request is identified from the token.
-> - **Work sessions and alerts:** never created through the API. The backend opens and closes work sessions and generates alerts automatically while processing telemetry (see endpoint 19).
-
 ---
 ---
 
