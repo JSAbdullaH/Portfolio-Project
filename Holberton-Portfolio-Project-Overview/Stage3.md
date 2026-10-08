@@ -639,7 +639,114 @@ erDiagram
 ---
 
 ## 4. Document External and Internal APIs
+This section defines how our platform communicates with the outside world. It lists the external APIs the system relies on and why each was chosen. It then specifies our own internal API: a RESTful API built with Node.js and Express that exchanges JSON. The Web Dashboard and the telemetry sources (Traccar and the device simulator) use this API to reach the backend. Field names and types follow the database design in Section 2.
 
+```mermaid
+flowchart TB
+    WEB["Web Dashboard<br/>(Company Admin / Site Manager)"]
+    GMAPS["Google Maps JavaScript API<br/>(External)"]
+    DEV["IoT Wearable Devices<br/>(GPS)"]
+    TRC["Traccar<br/>(External middleware)"]
+    SIM["Device Simulator<br/>(TR-02)"]
+
+    subgraph API["Internal REST API — Node.js + Express (JSON)"]
+        direction TB
+        MW["Auth Middleware (JWT) + Company Data Isolation"]
+        subgraph R1[" "]
+            direction LR
+            AUTH["Auth"] --> COMP["Companies<br/>(created via /auth/register)"]
+        end
+        subgraph R2[" "]
+            direction LR
+            USERS["Users"] ~~~ SITES["Sites"] ~~~ EMP["Employees"] ~~~ DEVS["Devices"]
+        end
+        subgraph R3[" "]
+            direction LR
+            TEL["Telemetry"] --> GEO["Geofences"] --> ALR["Alerts"]
+        end
+        subgraph R4[" "]
+            direction LR
+            TASKS["Tasks"] ~~~ HIST["History"] ~~~ REP["Reports (PDF)"]
+        end
+        MW ~~~ R1 ~~~ R2 ~~~ R3 ~~~ R4
+    end
+
+    DB[("PostgreSQL")]
+
+    WEB --> GMAPS
+    WEB -->|"HTTPS / JSON"| API
+    DEV --> TRC
+    TRC -->|"Position forwarding (JSON)"| API
+    SIM -->|"POST /telemetry"| API
+    API --> DB
+
+    classDef ext stroke-dasharray:6 4
+    class GMAPS,TRC ext
+
+    style R1 fill:transparent,stroke:transparent
+    style R2 fill:transparent,stroke:transparent
+    style R3 fill:transparent,stroke:transparent
+    style R4 fill:transparent,stroke:transparent
+```
+
+---
+
+### 4.1 External APIs
+
+| External API | Used by | Purpose in our system | Why we chose it |
+|---|---|---|---|
+| **Google Maps JavaScript API** | Web Dashboard (Frontend) | Displays the live site map and worker markers (US-16, US-18, US-19), draws and shows site boundaries and work zones (US-17), and replays movement paths (US-30). | It has strong, accurate map coverage in Saudi Arabia, clear documentation, and a free usage tier that is enough for an MVP. It also supports markers and polygons, which we need for workers, sites, and zones (TR-07). |
+| **Traccar** (open-source GPS tracking server) | Backend (ingestion) | Receives raw data from the GPS wearables over their native protocols, normalizes it, and forwards each position to our API as JSON. | Traccar supports hundreds of GPS protocols and device models. Our backend therefore does not depend on one vendor's data format, which reduces the *System-Device Mismatch* risk identified in Stage 2. It is open source, self-hosted, and has a built-in HTTP position-forwarding feature. |
+
+---
+
+### 4.2 Internal API Endpoints — Summary
+
+All paths are relative to the base URL `/api/v1`.
+
+**Roles:** `Public` = no token · `Admin` = company_admin · `Manager` = site_manager (Admin can do everything a Manager can) · `Device` = device API key
+
+| # | Method | Endpoint | Purpose | Access | Requirement |
+|---|---|---|---|---|---|
+| 1 | POST | `/auth/register` | Register a company and its admin account | Public | US-01 |
+| 2 | POST | `/auth/login` | Log in and receive access and refresh tokens | Public | US-02 |
+| 3 | POST | `/auth/refresh` | Get a new access token using a refresh token | Public (refresh token) | US-02, NFR-03 |
+| 4 | POST | `/auth/logout` | Log out by revoking the refresh token | Admin, Manager | US-02 |
+| 5 | POST | `/users` | Create a Site Manager account | Admin | US-04 |
+| 6 | GET | `/users` | List the company's user accounts | Admin | US-04 |
+| 7 | POST | `/sites` | Create a project site with its boundary and shift | Admin | Stage 2 – Multiple Sites |
+| 8 | GET | `/sites` | List the company's sites | Admin, Manager | Stage 2 – Multiple Sites |
+| 9 | PATCH | `/sites/:id` | Update a site | Admin | Stage 2 – Multiple Sites |
+| 10 | DELETE | `/sites/:id` | Deactivate a site | Admin | Stage 2 – Multiple Sites |
+| 11 | POST | `/employees` | Create an employee profile and record consent | Admin | US-06, Stage 2 – Consent |
+| 12 | GET | `/employees` | List, search, and filter employees | Admin, Manager | US-06, US-10 |
+| 13 | GET | `/employees/:id` | View an employee profile with status and device | Admin, Manager | US-06, US-09 |
+| 14 | PATCH | `/employees/:id` | Edit a profile, or record or withdraw consent | Admin | US-06, Stage 2 – Consent |
+| 15 | DELETE | `/employees/:id` | Deactivate an employee (records are kept) | Admin | US-06 |
+| 16 | POST | `/devices` | Register an IoT device and issue its API key | Admin | US-07 |
+| 17 | GET | `/devices` | List devices with online status and battery | Admin, Manager | US-14, US-15 |
+| 18 | PATCH | `/devices/:id` | Assign or unassign a device to an employee | Admin | US-08 |
+| 19 | POST | `/telemetry` | Receive a location reading from Traccar or the simulator | Device | US-11, US-12, US-13 |
+| 20 | GET | `/locations/live` | Current state of each worker for the live map | Admin, Manager | US-16, US-18, US-19 |
+| 21 | POST | `/geofences` | Create a work zone | Admin, Manager | US-17 |
+| 22 | GET | `/geofences` | List work zones of a site | Admin, Manager | US-17 |
+| 23 | PATCH | `/geofences/:id` | Update a work zone | Admin, Manager | US-17, User Types (0.3) |
+| 24 | DELETE | `/geofences/:id` | Deactivate a work zone | Admin, Manager | US-17, User Types (0.3) |
+| 25 | GET | `/alerts` | List alerts with filters | Admin, Manager | US-20, US-22 |
+| 26 | PATCH | `/alerts/:id` | Acknowledge an alert | Admin, Manager | US-23 |
+| 27 | POST | `/tasks` | Create a task and assign it to an employee | Admin, Manager | US-25 |
+| 28 | GET | `/tasks` | List tasks (e.g. all tasks of one employee) | Admin, Manager | US-27 |
+| 29 | PATCH | `/tasks/:id` | Update a task's status | Admin, Manager | US-26 |
+| 30 | GET | `/employees/:id/history` | Movement history of an employee for one day | Admin, Manager | US-28, US-30 |
+| 31 | GET | `/employees/:id/daily-record` | Daily record: attendance, minutes worked, alerts, tasks | Admin, Manager | US-29 |
+| 32 | POST | `/reports` | Generate a PDF report with a reference number | Admin, Manager | US-31, US-32, Stage 2 – Reports |
+| 33 | GET | `/reports/:id/download` | Download a generated PDF report | Admin, Manager | US-32 |
+
+> **Resources without their own endpoints**
+> - **Companies:** a company is created only through `POST /auth/register` (US-01). Its rule settings (daily working limit and midday ban window) start with the default values from the database design. No user story asks to view or edit them, so the MVP has no `/companies` endpoints. The company of every request is identified from the token.
+> - **Work sessions and alerts:** never created through the API. The backend opens and closes work sessions and generates alerts automatically while processing telemetry (see endpoint 19).
+
+---
 ---
 
 ## 5. Plan SCM and QA Strategies
