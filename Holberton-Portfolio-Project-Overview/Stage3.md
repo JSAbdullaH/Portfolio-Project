@@ -1104,23 +1104,41 @@ All paths are relative to the base URL `/api/v1`.
 
 ## 5. Plan SCM and QA Strategies
 
+### 5.1 Software Configuration Management (SCM) with Jira Integration
+
+#### 5.1.0 Jira Integration Overview
+* **Tool:** Jira (Software project, Scrum board) connected to GitHub through the **GitHub for Jira** app, so branches, commits, pull requests, builds and deployments appear on each Jira issue's *Development* panel.
+* **Single Source of Truth:** Every unit of work (story, task, bug, hotfix) exists as a Jira issue with a key (e.g., `Site14-123`). No branch, commit or PR is created without an issue key.
+* **Issue Types:** `Epic` → `Story` → `Task` / `Sub-task`, plus `Bug` for defects.
+
+| Jira Workflow Status | Triggered By (GitHub Event) | Automation Rule |
+| :--- | :--- | :--- |
+| `To Do` | Issue created and added to sprint | - |
+| `In Progress` | First branch containing the issue key is created | Auto-transition via Jira Automation |
+| `In Review` | Pull request opened against `develop` | Auto-transition; reviewer notified |
+| `In QA (Staging)` | PR merged into `develop` and staging deployment succeeds | Auto-transition on deployment event |
+| `Done` | Release merged into `main` and production deployment succeeds | Auto-transition; fix version stamped on issue |
+
 #### 5.1.1 Version Control & Repository Management
-* **Tool:** Git hosted on GitHub.
+* **Tool:** Git hosted on GitHub, linked to the Jira project.
 * **Repository Architecture:** Structured mono-repository or multi-repository configuration separating frontend (`/FrontEnd` - React) and backend (`/Backend` - Express.js).
 * **Access Control:** Restricted push permissions on protected primary branches (`main` and `develop`); branch protection rules require passed CI checks and mandatory code reviews before merging.
+* **Jira Enforcement:** A branch-name and PR-title check in GitHub Actions fails if no valid Jira issue key is present.
 
 #### 5.1.2 Branching Strategy (GitFlow Model)
+Branch names must include the Jira issue key: `<type>/<JIRA-KEY>-<short-description>`.
 
-| Branch Type | Base Branch | Target Branch | Purpose & Rules |
-| :--- | :--- | :--- | :--- |
-| `main` | - | - | Production-ready, stable code. Direct pushes disabled. Deploys directly to the production Docker cluster. |
-| `develop` | `main` | `main` | Active integration branch. Deploys automatically to the Staging environment. |
-| `feature/*` | `develop` | `develop` | Short-lived branch for individual feature/task development (e.g., `feature/user-auth`). |
-| `bugfix/*` | `develop` | `develop` | Non-critical patches created during staging or integration testing. |
-| `hotfix/*` | `main` | `main` & `develop` | Emergency production fixes. Merges to both `main` and `develop` simultaneously. |
+| Branch Type | Base Branch | Target Branch | Jira Link | Purpose & Rules |
+| :--- | :--- | :--- | :--- | :--- |
+| `main` | - | - | Release / Fix Version | Production-ready, stable code. Direct pushes disabled. Deploys directly to the production Docker cluster. |
+| `develop` | `main` | `main` | Sprint | Active integration branch. Deploys automatically to the Staging environment. |
+| `feature/*` | `develop` | `develop` | Story / Task | Short-lived branch per issue (e.g., `feature/Site14-123-user-auth`). |
+| `bugfix/*` | `develop` | `develop` | Bug | Non-critical patches found in staging or integration testing (e.g., `bugfix/Site14-210-cart-total`). |
+| `hotfix/*` | `main` | `main` & `develop` | Bug (P0/P1) | Emergency production fixes (e.g., `hotfix/Site14-301-login-outage`). Merged to both `main` and `develop`. |
 
 #### 5.1.3 Commit Standards & Conventions
-All commits must strictly follow the **Conventional Commits** standard (`<type>(<scope>): <short summary>`):
+All commits must follow the **Conventional Commits** standard with the Jira key placed in the scope or summary:
+`<type>(<scope>): <JIRA-KEY> <short summary>`
 
 * **Types:**
   * `feat`: A new user feature or REST API route.
@@ -1132,15 +1150,23 @@ All commits must strictly follow the **Conventional Commits** standard (`<type>(
   * `chore`: Updating Dockerfiles, `package.json` dependencies, or GitHub Actions pipelines.
 
 * **Examples:**
-  * `feat(api): add JWT authentication endpoint in Express`
-  * `fix(ui): resolve React dynamic routing hydration error`
-  * `chore(docker): optimize multi-stage Docker build for React`
+  * `feat(api): Site14-123 add JWT authentication endpoint in Express`
+  * `fix(ui): Site14-210 resolve React dynamic routing hydration error`
+  * `chore(docker): Site14-245 optimize multi-stage Docker build for React`
+
+* **Smart Commits (optional):** Commit messages may include Jira commands such as `Site14-123 #comment added token refresh #time 2h`, which post comments and log work on the issue.
+* **Enforcement:** A `commit-msg` husky hook plus `commitlint` validates both the Conventional Commits format and the presence of a Jira key.
 
 #### 5.1.4 Code Review & Pull Request (PR) Workflow
-1. **PR Creation:** Developers open a PR targeting `develop` from a `feature/*` branch and link the corresponding issue.
-2. **Automated Status Checks:** GitHub Actions triggers automated linting (`ESLint`), static analysis, and unit test suites across the Express and React projects.
-3. **Peer Review:** At least **1 mandatory code review approval** is required from a team member, assessing readability, security, database query efficiency, and React component performance.
-4. **Merge Execution:** Approved PRs are integrated using **Squash and Merge** to maintain a linear, easy-to-audit commit history.
+1. **PR Creation:** Developers open a PR targeting `develop` from a `feature/*` branch. The PR title starts with the Jira key (e.g., `Site14-123: JWT authentication endpoint`) and the PR template requires the Jira link, a description, and a test summary. The PR appears automatically on the Jira issue.
+2. **Automated Status Checks:** GitHub Actions triggers linting (`ESLint`), static analysis, and unit test suites across the Express and React projects. Build results are reported back to the Jira issue.
+3. **Peer Review:** At least **1 mandatory code review approval** is required, assessing readability, security, database query efficiency, and React component performance. The Jira issue moves to `In Review` while the PR is open.
+4. **Merge Execution:** Approved PRs are integrated using **Squash and Merge** to maintain a linear, auditable history. The squashed commit keeps the Jira key, and the issue moves to `In QA (Staging)` after the staging deploy succeeds.
+
+#### 5.1.5 Release Management in Jira
+* Each release is a Jira **Version** (e.g., `v1.4.0`) with issues assigned through the *Fix Version* field.
+* Release notes are generated from the Jira version's resolved issues and attached to the GitHub Release created from the `main` tag.
+* Production deployments are reported to Jira's **Deployments** feature, giving traceability from issue → PR → build → environment.
 
 ---
 
@@ -1160,12 +1186,14 @@ All commits must strictly follow the **Conventional Commits** standard (`<type>(
   * **Frontend (React):** React Testing Library (RTL) and Jest verify state changes, UI component rendering, and custom hooks.
   * **Backend (Express.js):** Jest verifies utility logic, middleware execution, and controller helper functions.
 * **Integration Testing:** Supertest executes HTTP requests against live Express routes connected to an isolated test **PostgreSQL Docker container**, verifying SQL queries and JSON responses.
-* **End-to-End (E2E) Testing:** Playwright or Cypress runs automated browser tests covering critical end-to-end user journeys (e.g., User Signup -> Login -> Dashboard -> Database Persistence).
+* **End-to-End (E2E) Testing:** Playwright or Cypress runs automated browser tests covering critical user journeys (e.g., User Signup -> Login -> Dashboard -> Database Persistence).
+* **Jira Traceability:** Test cases are linked to their Story through Jira issue links (`is tested by`). Acceptance criteria written in the Story become the basis of E2E scenarios. Test run results from CI are posted to the issue's Development panel.
 
 #### 5.2.2 QA Tools Matrix
 
 | Category | Tool | Application |
 | :--- | :--- | :--- |
+| **Issue & Test Tracking** | Jira (+ GitHub for Jira) | Tracks stories, bugs, test links, sprints, releases and deployments. |
 | **Linting & Formatting** | ESLint / Prettier | Enforces coding rules across Express modules. |
 | **Unit & Component Testing** | Jest / React Testing Library | Tests isolated frontend React components and backend functions. |
 | **API & Integration Testing** | Supertest / Postman | Validates Express API endpoints, HTTP status codes, and PostgreSQL interactions. |
@@ -1174,68 +1202,44 @@ All commits must strictly follow the **Conventional Commits** standard (`<type>(
 
 #### 5.2.3 Deployment Pipeline (CI/CD)
 
-The continuous deployment pipeline uses GitHub Actions to automate container builds and service deployment:
+The pipeline uses GitHub Actions to automate container builds and deployment, and reports build and deployment status to Jira.
 
 ```text
 [ Developer Push ] ──> [ ESLint & Jest Tests ] ──> [ Build Docker Images ]
-                                                            │
-[ Deploy Staging ] <── [ Merge into develop ]  <────────────┘
-        │
+   (Jira key in branch)                                      │
+[ Deploy Staging ] <── [ Merge into develop ]  <─────────────┘
+        │                (Jira: In QA)
 [ Staging QA ]     ──> [ Merge into main ]     ──> [ Deploy Production Containers ]
+                                                     (Jira: Done + Fix Version)
 ```
 
-1. **Staging Environment:** Automated deployment triggered upon merging into `develop`. Runs Docker Compose to update the staging container cluster for full integration testing.
-2. **Production Environment:** Triggered upon merging into `main`. Deploys multi-stage, production-optimized Docker containers for the React frontend, Express backend, and PostgreSQL database with automated health checks.
+1. **Staging Environment:** Automated deployment triggered upon merging into `develop`. Runs Docker Compose to update the staging cluster for full integration testing. A successful deploy moves linked issues to `In QA (Staging)`.
+2. **Production Environment:** Triggered upon merging into `main`. Deploys multi-stage, production-optimized Docker containers for the React frontend, Express backend, and PostgreSQL database with automated health checks. A successful deploy moves linked issues to `Done` and records the release version.
 
-#### 5.2.4 Defect Categorization & Management
+#### 5.2.4 Defect Categorization & Management (Jira Bugs)
+All defects are logged as Jira `Bug` issues with required fields: steps to reproduce, expected vs. actual result, environment (Staging/Production), severity, and affected version. QA links each bug to the Story it was found in (`relates to` / `is caused by`).
 
-| Priority | Level | Response Window | Action Plan |
+| Priority | Jira Priority | Response Window (SLA) | Action Plan |
 | :--- | :--- | :--- | :--- |
-| `P0` | Critical | < 4 hours | Production down or database corruption. Immediate `hotfix/*` created from `main`. |
-| `P1` | High | < 24 hours | Major functional defect in core flow. Must be resolved before next staging release. |
-| `P2` | Medium | Next Sprint | Non-blocking functional or performance bug. Logged into GitHub Issues backlog. |
-| `P3` | Low | Backlog | Visual polish, cosmetic adjustments, or minor React styling issues. |
+| `P0` Critical | Highest | < 4 hours | Production down or database corruption. Bug created, on-call notified via Jira Automation, and `hotfix/*` branch created from `main`. |
+| `P1` High | High | < 24 hours | Major defect in a core flow. Added to the current sprint and resolved before the next staging release. |
+| `P2` Medium | Medium | Next Sprint | Non-blocking functional or performance bug. Triaged into the Jira backlog and scheduled in sprint planning. |
+| `P3` Low | Low / Lowest | Backlog | Visual polish, cosmetic adjustments, or minor React styling issues. |
+
+* **Dashboards & Reporting:** A Jira dashboard tracks open bugs by priority, sprint burndown, defect escape rate (bugs found in production vs. staging), and SLA breaches.
+* **Definition of Done:** Code merged, CI green, reviewed, deployed to staging, QA verified, acceptance criteria met, and Jira issue transitioned to `Done`.
 
 ---
 
-
 ## 6. Technical Justifications
 
-### 6.1 Frontend Architecture: React.js
-
-* **Rationale:** React.js is a component-driven JavaScript library selected for building an interactive, modular Single-Page Application (SPA) user interface.
-* **Benefits:**
-  * **Component-Driven Development:** Encourages code reusability, modular architecture, and predictable unidirectional data flows.
-  * **Virtual DOM Performance:** Minimizes direct DOM manipulations by calculating diffs in memory, ensuring fast client-side rendering and responsive UI interactions.
-  * **Ecosystem & Community:** Rich ecosystem of mature libraries for client-side routing (React Router), global state management (Zustand/Redux), and UI components.
-* **Trade-offs & Mitigations:** Client-Side Rendering (CSR) can lead to larger initial JavaScript bundle sizes and delayed initial page render. Mitigated by implementing code-splitting (`React.lazy` / dynamic imports), route-based lazy loading, and asset compression.
-
-### 6.2 Backend Architecture: Express.js (Node.js)
-
-* **Rationale:** Express.js is a lightweight, unopinionated web framework for Node.js designed to build scalable, decoupled RESTful APIs.
-* **Benefits:**
-  * **Non-Blocking I/O:** Leverages Node.js's asynchronous event loop to process high volumes of concurrent HTTP requests efficiently with low memory consumption.
-  * **Flexibility & Ecosystem:** Integrates seamlessly with middleware for CORS policy handling, JWT authentication, request body parsing, and database ORMs/query builders.
-  * **Language Uniformity:** Utilizing JavaScript/TypeScript across both frontend (React) and backend (Express) simplifies development velocity, context switching, and code sharing.
-* **Trade-offs & Mitigations:** CPU-intensive computations can block the single-threaded event loop. Mitigated by offloading heavy background tasks to asynchronous job queues or worker threads.
-
-### 6.3 Database Engine: PostgreSQL
-
-* **Rationale:** PostgreSQL is an enterprise-grade, open-source Relational Database Management System (RDBMS) selected to manage structured data relationships with strict transactional guarantees.
-* **Benefits:**
-  * **ACID Compliance:** Guarantees full transactional safety, preventing partial updates or data corruption during complex multi-table operations.
-  * **Relational Integrity:** Strictly enforces schemas, primary/foreign key constraints, and indexing mechanisms.
-  * **Extensibility (JSONB Support):** Supports JSONB data types, allowing high-performance indexing and querying of semi-structured data alongside relational tables when necessary.
-* **Trade-offs & Mitigations:** Schema modifications require structured migration steps. Mitigated by using database migration tools integrated into the Express backend deployment workflow.
-
-### 6.4 Infrastructure & Containerization: Docker & Docker Compose
-
-* **Rationale:** Docker encapsulates the React client, Express API, and PostgreSQL database into lightweight, isolated container environments.
-* **Benefits:**
-  * **Environment Consistency:** Eliminates "works on my machine" issues by standardizing Node.js runtimes, environment variables, and PostgreSQL versions across local development, staging, and production.
-  * **Simplified Orchestration:** Docker Compose enables single-command execution (`docker compose up`) for the entire multi-container application stack.
-  * **Efficient Deployments:** Multi-stage Docker builds separate build toolchains from runtime environments, producing minimal image sizes for faster deployments.
-* **Trade-offs & Mitigations:** Slightly higher initial setup and container management overhead. Mitigated by using standardized Dockerfiles and caching base build layers in CI/CD pipelines.
+| Component | Technology | Rationale | Key Benefits | Trade-offs | Mitigations |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **6.1 Frontend** | React.js | Component-driven JavaScript library for building an interactive, modular Single-Page Application (SPA). | **Component-driven development:** reusable, modular code with predictable unidirectional data flow.<br>**Virtual DOM:** diffs calculated in memory for fast rendering and responsive UI.<br>**Ecosystem:** mature libraries for routing (React Router), state management (Zustand/Redux) and UI components. | Client-Side Rendering can produce larger initial JavaScript bundles and a delayed first page render. | Code-splitting (`React.lazy` / dynamic imports), route-based lazy loading, and asset compression. |
+| **6.2 Backend** | Express.js (Node.js) | Lightweight, unopinionated web framework for building scalable, decoupled RESTful APIs. | **Non-blocking I/O:** the asynchronous event loop handles many concurrent requests with low memory use.<br>**Flexibility:** middleware for CORS, JWT authentication, body parsing and ORMs/query builders.<br>**Language uniformity:** JavaScript/TypeScript across frontend and backend improves velocity and code sharing. | CPU-intensive computations can block the single-threaded event loop. | Offload heavy tasks to asynchronous job queues or worker threads. |
+| **6.3 Database** | PostgreSQL | Enterprise-grade, open-source RDBMS for structured data with strict transactional guarantees. | **ACID compliance:** prevents partial updates and corruption in multi-table operations.<br>**Relational integrity:** enforced schemas, primary/foreign keys and indexing.<br>**JSONB support:** indexed querying of semi-structured data alongside relational tables. | Schema changes require structured migration steps. | Database migration tools integrated into the Express backend deployment workflow. |
+| **6.4 Infrastructure** | Docker & Docker Compose | Encapsulates the React client, Express API and PostgreSQL database in lightweight, isolated containers. | **Environment consistency:** standardized Node.js, environment variables and PostgreSQL versions across local, staging and production.<br>**Simplified orchestration:** `docker compose up` runs the full stack.<br>**Efficient deployments:** multi-stage builds produce minimal images. | Slightly higher initial setup and container management overhead. | Standardized Dockerfiles and cached base build layers in CI/CD pipelines. |
+| **6.5 SCM & Project Tracking** | Git, GitHub & Jira | Git/GitHub provide version control and CI; Jira provides planning, issue tracking and release management, linked through GitHub for Jira. | **End-to-end traceability:** issue → branch → commit → PR → build → deployment.<br>**Workflow automation:** statuses transition automatically from GitHub events.<br>**Visibility:** sprint boards, dashboards and release notes for the whole team. | Requires discipline in including issue keys and keeping Jira workflows aligned with GitFlow. | Enforced via commitlint, branch-name and PR-title checks in CI, and Jira Automation rules. |
 
 ---
 
