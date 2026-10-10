@@ -1114,9 +1114,10 @@ All paths are relative to the base URL `/api/v1`.
 | Jira Workflow Status | Triggered By (GitHub Event) | Automation Rule |
 | :--- | :--- | :--- |
 | `To Do` | Issue created and added to sprint | - |
-| `In Progress` | First branch containing the issue key is created | Auto-transition via Jira Automation |
-| `In Review` | Pull request opened against `develop` | Auto-transition; reviewer notified |
-| `In QA (Staging)` | PR merged into `develop` and staging deployment succeeds | Auto-transition on deployment event |
+| `In Dev` | First branch containing the issue key is created | Auto-transition via Jira Automation |
+| `Code Review` | Pull request opened against `develop` | Auto-transition; reviewer notified |
+| `In QA` | Pull request opened against `develop` | Auto-transition on deployment event |
+| `UAT` | PR merged into `develop` and staging deployment succeeds | Test a User Expirence I/O |
 | `Done` | Release merged into `main` and production deployment succeeds | Auto-transition; fix version stamped on issue |
 
 #### 5.1.1 Version Control & Repository Management
