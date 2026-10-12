@@ -3,16 +3,29 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:db": "jest tests/db",
+    "db:check": "node scripts/db.js check",
+    "db:migrate": "node scripts/db.js migrate",
+    "db:rollback": "node scripts/db.js rollback",
+    "db:status": "node scripts/db.js status",
+    "db:new": "node scripts/db.js new",
+    "db:mark-test": "node scripts/db.js mark-test --test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
+    "jest": "^30.5.2",
     "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=20.12"
   }
 }

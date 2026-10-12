@@ -1,0 +1,13 @@
+# Dependencies are installed with `npm install`, never committed
+node_modules/
+
+# Local secrets: each developer keeps their own copy
+.env
+.env.*
+!.env.example
+
+# Test output
+coverage/
+
+# Supabase CA certificate (downloaded per developer)
+certs/
