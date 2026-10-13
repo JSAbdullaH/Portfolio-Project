@@ -37,16 +37,15 @@ One table holds the whole baseline: what the business needs (`BR`), what the sys
  
 | ID | Category | Requirement or role | Target, scope or detail |
 |---|---|---|---|
-| BR-01 | Business | Organizations must have a complete, automatic record of field operations: attendance, movements, and alerts. | Delivered by IoT Data Integration, Live Map & Geofencing and History & Records |
+| BR-01 | Business | Organizations must have a complete, automatic record of field operations: attendance, progress, movements, and alerts. | Delivered by IoT Data Integration, Live Map & Geofencing and History & Records |
 | BR-02 | Business | Managers must be able to see where their workers are in real time on a site map. | Delivered by Live Map & Geofencing |
 | BR-03 | Business | The system must alert managers early when a worker leaves a designated zone, exceeds the permitted working hours for their job category, or is in an outdoor zone as the midday work ban approaches. | Delivered by Automated Alerts |
 | BR-04 | Business | Managers must be able to assign tasks to employees and follow their status. | Delivered by Task & Workload Assignment |
-| BR-05 | Business | Organizations must be able to review historical data to support compliance and record keeping. | Delivered by History & Records |
-| BR-06 | Business | Organizations must be able to hand a client or an inspector a document, not a spreadsheet, and that document must be verifiable as the one we issued. | Delivered by Reports & Exports |
-| BR-07 | Business | Each organization's data must remain private and accessible only to its own users. | Delivered by Company Account & Authentication |
-| BR-08 | Business | An organization must be able to run several concurrent sites and attribute hours to the right project. | Delivered by Multiple Sites |
+| BR-05 | Business | Organizations must be able to hand a client or an inspector a document, not a spreadsheet, and that document must be verifiable as the one we issued. | Delivered by Reports & Exports |
+| BR-06 | Business | Each organization's data must remain private and accessible only to its own users. | Delivered by Company Account & Authentication |
+| BR-07 | Business | An organization must be able to run several concurrent sites and attribute hours to the right project. | Delivered by Multiple Sites |
 | TR-01 | Functional | The system must receive telemetry data — location, battery level, and timestamp — from IoT devices through a middleware server, Traccar. | Traccar and the telemetry ingestion module |
-| TR-02 | Functional | The system must provide a device simulator that sends realistic telemetry data to the API without depending on hardware. | Device simulator, posting to the telemetry endpoint directly |
+| TR-02 | Functional | The system must provide a device simulator that sends realistic telemetry data to the API without depending on hardware. "for testing" | Device simulator, posting to the telemetry endpoint directly |
 | TR-03 | Functional | The backend must expose a RESTful API using JSON for all frontend operations, with one error shape and one validation layer. | 53 endpoints, Section 4.2 |
 | TR-04 | Functional | The system must store companies, users, sites, employees, devices, geofences, work sessions, telemetry logs, alerts, tasks, corrections and reports in a relational database. | PostgreSQL: 16 tables and 1 view, Section 2.2 |
 | TR-05 | Functional | The system must detect site entry and exit and geofence entry and exit by comparing each location reading with the defined boundaries. | Session and geofence engine, Section 1 |
