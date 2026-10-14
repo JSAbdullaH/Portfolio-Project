@@ -18,8 +18,8 @@ async function register(input) {
         commercialRegistration: input.commercial_registration,
       });
       await userModel.create(client, {
-        companyId: company.id,
-        fullName: input.full_name,
+        //companyId: company.id,
+        //fullName: input.full_name,
         email: input.email,
         passwordHash,
         role: 'company_admin',
@@ -68,10 +68,10 @@ async function login(input) {
     expires_in: expiresIn,
     user: {
       id: user.id,
-      full_name: user.full_name,
+      //full_name: user.full_name,
       email: user.email,
       role: user.role,
-      company_id: user.company_id,
+      //company_id: user.company_id,
     },
   };
 }
