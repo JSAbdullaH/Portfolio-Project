@@ -6,10 +6,6 @@ const { notFound, errorHandler } = require('./middlewares/error.middleware');
 
 const app = express();
 
-if (config.NODE_ENV === 'production') app.set('trust proxy', 1);
-app.disable('x-powered-by');
-app.use(helmet());
-app.use(express.json({ limit: '100kb' }));
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
