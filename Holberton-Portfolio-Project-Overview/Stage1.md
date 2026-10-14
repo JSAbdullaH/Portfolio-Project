@@ -15,7 +15,7 @@ To reach this milestone and ensure a solid foundation, we initiated our journey 
 - [1. Research and Brainstorming](#1-research-and-brainstorming)
 - [2. Idea Evaluation](#2-idea-evaluation)
 - [3. Decision and Refinement](#3-decision-and-refinement)
-- [4. Authors](#4-Authors)
+- [4. Authors](#4-authors)
 
 ---
 
