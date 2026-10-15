@@ -1,6 +1,6 @@
 // SITE14 database schema (Prisma ORM 7)
 // Source design: Stage3.md section 2.2 (16 tables + 1 view), plus heart rate (v2.1).
-// Deviations from Stage3 are listed in prisma/README.md.
+// Deviations from Stage3 are listed in the SITE-69 pull request.
 //
 // Things Prisma cannot express live in the migration SQL, not here:
 //   CHECK constraints, partial unique indexes, triggers (consent, append-only),

@@ -1,9 +1,9 @@
 // End-to-end through the real Express app and the test database:
 // route -> validation -> controller -> service -> Prisma -> PostgreSQL.
 const request = require('supertest');
-const app = require('../../src/app');
-const { prisma } = require('../../src/config/db');
-const { pool, truncateAll } = require('../helpers/db');
+const app = require('../src/app');
+const { prisma } = require('../src/config/db');
+const { pool, truncateAll } = require('./setup');
 
 const account = {
   company_name: 'Al-Bina Advanced',

@@ -58,9 +58,9 @@
       "json"
     ],
     "setupFiles": [
-      "<rootDir>/tests/setup/env.js"
+      "<rootDir>/tests/setup.js"
     ],
-    "globalSetup": "<rootDir>/tests/setup/global-setup.js",
+    "globalSetup": "<rootDir>/tests/setup.js",
     "testTimeout": 30000
   }
 }

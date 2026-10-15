@@ -1,8 +1,8 @@
 // Writes and reads one row in each of the 16 models through Prisma Client.
 // If schema.prisma and the migration SQL ever disagree (a column name, a type,
 // a relation), one of these calls fails.
-const { prisma } = require('../../src/config/db');
-const { pool, truncateAll, square } = require('../helpers/db');
+const { prisma } = require('../src/config/db');
+const { pool, truncateAll, square } = require('./setup');
 
 beforeAll(truncateAll);
 afterAll(async () => {

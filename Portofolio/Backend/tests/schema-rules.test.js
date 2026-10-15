@@ -2,7 +2,7 @@
 // Each test names the SQLSTATE the database must answer with.
 //   23503 foreign key  23505 unique  23514 check
 //   RC002 no consent   AO001 append-only (our own codes, raised by triggers)
-const { pool, TABLES, truncateAll, makeCompany, openSession, sqlState } = require('../helpers/db');
+const { pool, TABLES, truncateAll, makeCompany, openSession, sqlState } = require('./setup');
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());

@@ -1,7 +1,44 @@
-// Direct SQL access for tests that check the database rules themselves.
-const { Pool } = require('pg');
+// Shared test setup. Jest uses this one file in three ways:
+//   1. setupFiles: runs it before every test file, so the app talks to the test database.
+//   2. globalSetup: calls the exported function once, to rebuild the test database.
+//   3. Test files require it for the small SQL helpers below.
+const fs = require('node:fs');
+const path = require('node:path');
+const { Client, Pool } = require('pg');
+require('dotenv').config({ quiet: true });
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// ---------- 1. Point the app at the test database, and refuse anything else ----------
+const url = process.env.DATABASE_URL_TEST;
+if (!url) {
+  throw new Error('DATABASE_URL_TEST is not set. Copy .env.example to .env and run: createdb site14_test');
+}
+const name = new URL(url).pathname.replace(/^\//, '');
+if (!/test/i.test(name)) {
+  throw new Error(`Refusing to run tests on database "${name}": its name must contain "test", because tests wipe it.`);
+}
+process.env.DATABASE_URL = url;
+process.env.NODE_ENV = 'test';
+process.env.JWT_ACCESS_SECRET ||= 'test-only-secret-at-least-32-characters-long';
+
+// ---------- 2. Rebuild the test database from the migration files (once per run) ----------
+async function globalSetup() {
+  const client = new Client({ connectionString: url });
+  await client.connect();
+  try {
+    await client.query('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;');
+    const dir = path.join(__dirname, '..', 'prisma', 'migrations');
+    const folders = fs.readdirSync(dir).filter((f) => fs.statSync(path.join(dir, f)).isDirectory()).sort();
+    for (const folder of folders) {
+      await client.query(fs.readFileSync(path.join(dir, folder, 'migration.sql'), 'utf8'));
+    }
+  } finally {
+    await client.end();
+  }
+}
+
+// ---------- 3. SQL helpers for the tests ----------
+// A Pool opens no connection until the first query, so creating it here is free.
+const pool = new Pool({ connectionString: url });
 
 const TABLES = [
   'companies', 'job_category_rules', 'users', 'auth_tokens', 'refresh_tokens', 'sites',
@@ -19,7 +56,7 @@ const square = (lng, lat, half = 0.001) => ({
   coordinates: [[[lng - half, lat - half], [lng + half, lat - half], [lng + half, lat + half], [lng - half, lat + half], [lng - half, lat - half]]],
 });
 
-// One company with everything a session needs. Returns the ids.
+// One company with everything a work session needs. Returns the ids.
 async function makeCompany(tag, { consent = true } = {}) {
   const q = async (sql, params) => (await pool.query(sql, params)).rows[0];
   const company = await q('INSERT INTO companies (name) VALUES ($1) RETURNING id', [`Company ${tag}`]);
@@ -65,4 +102,5 @@ async function sqlState(sql, params) {
   }
 }
 
-module.exports = { pool, TABLES, truncateAll, makeCompany, openSession, sqlState, square };
+module.exports = globalSetup;
+Object.assign(module.exports, { pool, TABLES, truncateAll, makeCompany, openSession, sqlState, square });
